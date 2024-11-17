@@ -29,8 +29,20 @@ case "$1" in
     python -m pipeline.upload.run
     echo "End upload"
     ;;
+  "config_test")
+    python -m pipeline.config_test
+    ;;
   *)
-    echo "Usage: docker run <image> [ingest|transform|upload|etl]"
+    echo "Error: Invalid command '$1'"
+    echo
+    echo "Available commands:"
+    echo "  ingest       - Run the data ingestion process"
+    echo "  transform    - Run SQLMesh transformations"
+    echo "  upload       - Run the data upload process"
+    echo "  etl          - Run the complete pipeline (ingest + transform + upload)"
+    echo "  config_test  - Test and display current configuration settings"
+    echo
+    echo "Usage: docker compose run pipeline <command>"
     exit 1
     ;;
 esac
