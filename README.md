@@ -252,7 +252,7 @@ This creates S3 paths like: `s3://osaa-poc/prod/landing/`
 #### Testing Configuration
 To verify your environment settings before running the pipeline:
 ```bash
-docker compose run --rm pipeline python -m pipeline.config_test
+docker compose run --rm pipeline config_test
 ```
 This will output all configured paths and S3 locations based on your environment settings.
 
