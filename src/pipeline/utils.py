@@ -40,10 +40,18 @@ def s3_init(return_session=False) -> boto3.client:
     load_dotenv()
 
     try:
+        # Try environment variables first (makes logic compatible with just-based local runs and docker)
+        aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID') or os.getenv('AWS_ACCESS_KEY_ID')
+        aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY') or os.getenv('AWS_SECRET_ACCESS_KEY')
+        aws_region = os.environ.get('AWS_DEFAULT_REGION') or os.getenv('AWS_DEFAULT_REGION')
+
+        if not all([aws_access_key, aws_secret_key, aws_region]):
+            raise ValueError("Missing required AWS credentials")
+
         session = boto3.Session(
-            aws_access_key_id=os.getenv('KEY_ID'),
-            aws_secret_access_key=os.getenv('SECRET'),
-            region_name=os.getenv('REGION')
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_key,
+            region_name=aws_region
         )
 
         s3_client = session.client('s3')
@@ -80,8 +88,8 @@ def get_s3_file_paths(bucket_name: str, prefix: str) -> dict:
         for key_data in filtered_iterator:
             key = key_data['Key']
             parts = key.split('/')
-            if len(parts) == 3:  # Ensure we have landing/source/filename structure
-                source, filename = parts[1], parts[2]
+            if len(parts) >= 4:  # New structure: [env, landing, source, filename]
+                source, filename = parts[-2], parts[-1]  # Take the last two parts
                 if source not in file_paths:
                     file_paths[source] = {}
                 file_paths[source][filename.split('.')[0]] = f"s3://{bucket_name}/{key}"
@@ -113,7 +121,8 @@ def download_s3_client(s3_client: boto3.client, s3_bucket_name: str, s3_folder: 
         if 'Contents' in response:
             for obj in response['Contents']:
                 s3_key = obj['Key']
-                local_file_path = os.path.join(local_dir, os.path.basename(s3_key))
+                filename = s3_key.split('/')[-1]  # Take only the last part as filename
+                local_file_path = os.path.join(local_dir, filename)
                 
                 # Download the file
                 s3_client.download_file(s3_bucket_name, s3_key, local_file_path)
