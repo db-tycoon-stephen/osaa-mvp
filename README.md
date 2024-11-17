@@ -100,7 +100,7 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
    AWS_ACCESS_KEY_ID=<your-aws-access-key>
    AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
    AWS_DEFAULT_REGION=<your-aws-region>
-   S3_BUCKET_NAME=osaa-poc
+   S3_BUCKET_NAME=osaa-mvp
    ```
 
    These credentials are used for:
@@ -191,39 +191,78 @@ just --list
    ```
    docker build -t osaa-mvp .
    ```
-2. Run the complete pipeline:
-   ```
-   docker compose up
-   ```
 
 ### Environment Configuration
+The pipeline supports different execution environments controlled through environment variables.
+The main variables that control behavior are:
+- TARGET: Controls both S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
+- USERNAME: Used for S3 paths in `dev` environment. Default is `default`
 
-The pipeline uses environment variables to control execution targets and S3 paths. Key configurations:
+####  Standard Execution
+Run the complete pipeline with default settings:
+```bash
+docker compose up
+```
+This uses the environment variables from your `.env` file.
+
+#### One-off Pipeline Components
+You can run specific parts of the pipeline:
+1. Run only the ingestion process:
+```bash
+docker compose run pipeline ingest
+```
+
+2. Run only the upload process:
+```bash
+docker compose run pipeline upload
+```
 
 
-- `TARGET`: Defines the environment for SQLMesh transformations. Options: `dev`, `int`, `prod`. Default is `dev`.
+#### Environment Variable Control at Runtime
+You can override environment variables when running specific commands without modifying your `.env` file. This is useful for:
+- Testing different environments
+- Running as different users
+- Temporary configuration changes
 
-The behavior should be controled by environment variables, but can be tested with the following commands:
-
-Development (uses username for S3 paths)
+#### Examples
+1. Run as a specific user in development:
+Uses `username` for S3 paths:
 ```bash
 docker compose run -e TARGET=dev -e USERNAME=johndoe pipeline etl
 ```
 
-Integration (uses 'int' for S3 paths)
+This creates S3 paths like: `s3://osaa-poc/dev_johndoe/landing/`
+
+2. Run as integration environment:
+Uses `int` for S3 paths:
 ```bash
 docker compose run -e TARGET=int pipeline etl
 ```
-Production (uses 'prod' for S3 paths)
+
+This creates S3 paths like: `s3://osaa-poc/int/landing/`
+
+3. Run as production environment:
+Uses `prod` for S3 paths:
 ```bash
 docker compose run -e TARGET=prod pipeline etl
 ```
 
-With that, the S3 structure will be:
+This creates S3 paths like: `s3://osaa-poc/prod/landing/`
+
+#### Testing Configuration
+To verify your environment settings before running the pipeline:
+```bash
+docker compose run pipeline python -m pipeline.config_test
 ```
-s3://osaa-poc/                           # Base bucket
+This will output all configured paths and S3 locations based on your environment settings.
+
+
+#### S3 Folder Structure
+
+```
+s3://osaa-mvp/                           # Base bucket
 │
-├── {username}/                          # For dev environment (e.g., johndoe/)
+├── dev_{username}/                      # For dev environment (e.g., johndoe/)
 │   ├── landing/                         # Raw data landing zone
 │   │   ├── edu/                         # Education data
 │   │   │   ├── SDG_LABEL.parquet
