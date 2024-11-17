@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Create necessary directories and empty DB file
-RUN mkdir -p sqlMesh && touch sqlMesh/osaa_mvp.db
+RUN mkdir -p datalake/raw sqlMesh && touch sqlMesh/osaa_mvp.db
 
 # Copy requirements first for better caching
 COPY requirements.txt .
