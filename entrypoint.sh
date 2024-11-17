@@ -4,7 +4,7 @@ case "$1" in
     python -m pipeline.ingest.run
     ;;
   "transform")
-    cd sqlMesh && sqlmesh plan --auto-apply
+    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified ${TARGET:-dev}
     ;;
   "upload")
     python -m pipeline.upload.run
@@ -17,7 +17,7 @@ case "$1" in
     echo "End ingestion"
     
     echo "Start sqlMesh"
-    cd sqlMesh && sqlmesh run
+    cd sqlMesh && sqlmesh run ${TARGET:-dev}
     echo "End sqlMesh"
     
     cd ..

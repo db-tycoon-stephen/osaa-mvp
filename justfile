@@ -5,6 +5,7 @@ set dotenv-load
 package := "osaa-poc"
 venv_dir := ".venv"
 requirements_file := "requirements.txt"
+target := env_var_or_default("TARGET", "dev")
 
 # Include the src directory in PYTHONPATH
 export PYTHONPATH := "src"
@@ -45,7 +46,7 @@ ingest:
 # Run SQLMesh transformations
 transform:
     echo "Running SQLMesh transformations..."
-    cd sqlMesh && sqlmesh plan --auto-apply
+    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified {{target}}
 
 # Run Upload pipeline with optional arguments for sources
 upload:
