@@ -27,12 +27,40 @@ osaa-mvp/
 ├── pyproject.toml             # Project metadata and dependencies
 ├── requirements.txt           # Python package dependencies
 ```
-
+```
+osaa-mvp/
+├── datalake/                  # Local representation of the datalake
+│   ├── raw/                   # Source data files (CSV)
+│   │   ├── edu/               # Contains educational datasets
+│   │   └── wdi/               # World Development Indicators datasets
+│   └── staging/               # Staging area for processed Parquet files
+├── scratchpad/                # Temporary space for working code or notes
+├── sqlMesh/                   # SQLMesh configuration and models
+│   ├── models/                # SQLMesh model definitions
+│   └── osaa_mvp.db           # DuckDB database for SQLMesh transformations
+├── src/
+│   └── pipeline/             # Core pipeline code
+│       ├── etl/              # Extract, Transform, Load scripts
+│       │   └── sources/      # Source-specific data processing (e.g., WDI, EDU)
+│       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
+│       ├── upload/           # Handles DuckDB transformed data upload to S3
+│       ├── catalog.py        # Defines data catalog interactions
+│       ├── config.py         # Stores configuration details (e.g., paths, S3 settings)
+│       ├── utils.py          # Utility functions
+├── .env                      # Environment variables configuration
+├── dockerfile                # Docker container definition
+├── docker-compose.yml        # Docker services and environment setup
+├── entrypoint.sh             # Docker container entry point script
+├── justfile                  # Automates common tasks (installation, running pipelines) for local execution w/o Docker
+├── pyproject.toml            # Project metadata and dependencies
+└── requirements.txt          # Python package dependencies
+```
 ## Key Components
 
 - **Ibis**: A Python framework for data analysis, used to write expressive and portable data transformations. It provides a high-level abstraction over SQL databases like DuckDB, allowing for cleaner, more Pythonic data manipulation.
 - **DuckDB**: A highly performant in-memory SQL engine for analytical queries, used for efficient data processing and querying, in order to process, convert, and interact with Parquet files and S3.
 - **Parquet**: A columnar storage file format, used for efficient data storage and retrieval. Used as the core format for storing processed data.
+- **SQLMesh**: A SQL-based data management tool, used to manage the SQLMesh models and transformations.
 - **S3**: Amazon Simple Storage Service, used as the cloud storage solution for the data lake, storing both raw (landing folder) and processed (staging folder) data.
 
 ## How It Works
@@ -49,6 +77,7 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
 - Python versions 3.9 to 3.11 (3.12 not supported)
 - AWS account with S3 access
 - Just (command runner) - for running predefined commands
+- Docker Desktop (optional) - for running the pipeline in a containerized environment
 
 ### Setup
 1. Clone the repository:
@@ -165,7 +194,7 @@ Now your raw data is set up correctly, and you can proceed with running the pipe
 
 ### Running the Pipeline
 
-Use the `justfile` to run common tasks:
+#### Using the `justfile` to run common tasks:
 
 ```bash
 just ingest    # Run the ingestion process
@@ -178,6 +207,71 @@ You can see all available commands by running:
 ```bash
 just --list
 ```
+
+#### Running with Docker
+1. Build the Docker image:
+   ```
+   docker build -t osaa-mvp .
+   ```
+2. Run the complete pipeline:
+   ```
+   docker compose up
+   ```
+
+### Environment Configuration
+
+The pipeline uses environment variables to control execution targets and S3 paths. Key configurations:
+
+
+- `TARGET`: Defines the environment for SQLMesh transformations. Options: `dev`, `int`, `prod`. Default is `dev`.
+
+The behavior should be controled by environment variables, but can be tested with the following commands:
+
+Development (uses username for S3 paths)
+```bash
+docker compose run -e TARGET=dev -e USERNAME=johndoe pipeline etl
+```
+
+Integration (uses 'int' for S3 paths)
+```bash
+docker compose run -e TARGET=int pipeline etl
+```
+Production (uses 'prod' for S3 paths)
+```bash
+docker compose run -e TARGET=prod pipeline etl
+```
+
+With that, the S3 structure will be:
+```
+s3://osaa-poc/                           # Base bucket
+│
+├── {username}/                          # For dev environment (e.g., johndoe/)
+│   ├── landing/                         # Raw data landing zone
+│   │   ├── edu/                         # Education data
+│   │   │   ├── SDG_LABEL.parquet
+│   │   │   ├── OPRI_DATA_NATIONAL.parquet
+│   │   │   ├── SDG_DATA_NATIONAL.parquet
+│   │   │   └── OPRI_LABEL.parquet
+│   │   └── wdi/                         # World Development Indicators
+│   │       ├── WDICSV.parquet
+│   │       └── WDISeries.parquet
+│   │
+│   ├── transformed/                     # Transformed data
+│   │   └── wdi/
+│   │       └── wdi_transformed.parquet
+│
+├── int/                                 # Integration environment (CICD)
+│   ├── landing/
+│   ├── transformed/
+│   └── staging/
+│
+└── prod/                                # Production environment
+    ├── landing/
+    ├── transformed/
+    └── staging/
+```
+
+
 
 ## Next Steps
 
