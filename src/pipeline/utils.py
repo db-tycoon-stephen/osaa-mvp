@@ -88,7 +88,7 @@ def get_s3_file_paths(bucket_name: str, prefix: str) -> dict:
         for key_data in filtered_iterator:
             key = key_data['Key']
             parts = key.split('/')
-            if len(parts) >= 4:  # New structure: [env, landing, source, filename]
+            if len(parts) >= 4:  # Ensure we have [env/landing/source/filename]
                 source, filename = parts[-2], parts[-1]  # Take the last two parts
                 if source not in file_paths:
                     file_paths[source] = {}
