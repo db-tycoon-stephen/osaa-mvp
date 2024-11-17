@@ -5,28 +5,6 @@
 This project implements a **Data Pipeline Minimum Viable Product** (MVP) for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging Ibis, DuckDB, the Parquet format and S3 to create an efficient and scalable data processing system. The pipeline ingests data from various sources, transforms it, and stores it in a data lake structure, enabling easy access and analysis.
 
 ## Project Structure
-
-```
-osaa-mvp/
-├── datalake/                  # Local representation of the datalake
-│   ├── raw/                   # Source data files (CSV)
-│   │   ├── edu/               # Contains educational datasets
-│   │   ├── wdi/               # World Development Indicators datasets
-│   └── staging/               # Staging area for processed Parquet files
-├── scratchpad/                # Temporary space for working code or notes
-├── src/
-│   └── pipeline/              # Core pipeline code
-│       ├── etl/               # Extract, Transform, Load scripts
-│       │   ├── sources/       # Source-specific data processing (e.g., WDI, EDU)
-│       ├── ingest/            # Handles data ingestion from local raw csv to S3 parquet
-│       ├── catalog.py         # Defines data catalog interactions
-│       ├── config.py          # Stores configuration details (e.g., paths, S3 settings)
-│       ├── utils.py           # Utility functions
-├── .env                       # Environment variables configuration
-├── justfile                   # Automates common tasks (installation, running pipelines)
-├── pyproject.toml             # Project metadata and dependencies
-├── requirements.txt           # Python package dependencies
-```
 ```
 osaa-mvp/
 ├── datalake/                  # Local representation of the datalake
