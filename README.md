@@ -209,12 +209,12 @@ This uses the environment variables from your `.env` file.
 You can run specific parts of the pipeline:
 1. Run only the ingestion process:
 ```bash
-docker compose run pipeline ingest
+docker compose run --rm pipeline ingest
 ```
 
 2. Run only the upload process:
 ```bash
-docker compose run pipeline upload
+docker compose run --rm pipeline upload
 ```
 
 
@@ -228,7 +228,7 @@ You can override environment variables when running specific commands without mo
 1. Run as a specific user in development:
 Uses `username` for S3 paths:
 ```bash
-docker compose run -e TARGET=dev -e USERNAME=johndoe pipeline etl
+docker compose run --rm -e TARGET=dev -e USERNAME=johndoe pipeline etl
 ```
 
 This creates S3 paths like: `s3://osaa-poc/dev_johndoe/landing/`
@@ -236,7 +236,7 @@ This creates S3 paths like: `s3://osaa-poc/dev_johndoe/landing/`
 2. Run as integration environment:
 Uses `int` for S3 paths:
 ```bash
-docker compose run -e TARGET=int pipeline etl
+docker compose run --rm -e TARGET=int pipeline etl
 ```
 
 This creates S3 paths like: `s3://osaa-poc/int/landing/`
@@ -244,7 +244,7 @@ This creates S3 paths like: `s3://osaa-poc/int/landing/`
 3. Run as production environment:
 Uses `prod` for S3 paths:
 ```bash
-docker compose run -e TARGET=prod pipeline etl
+docker compose run --rm -e TARGET=prod pipeline etl
 ```
 
 This creates S3 paths like: `s3://osaa-poc/prod/landing/`
@@ -252,7 +252,7 @@ This creates S3 paths like: `s3://osaa-poc/prod/landing/`
 #### Testing Configuration
 To verify your environment settings before running the pipeline:
 ```bash
-docker compose run pipeline python -m pipeline.config_test
+docker compose run --rm pipeline config_test
 ```
 This will output all configured paths and S3 locations based on your environment settings.
 
