@@ -1,10 +1,24 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Copy all files from the current directory to the container
-COPY . .
+WORKDIR /app
 
-# Install any dependencies specified in requirements.txt
-RUN pip install --no-cache-dir sqlmesh==0.130.1 ibis==3.3.0 ibis-framework==9.5.0
+# Create necessary directories and empty DB file
+RUN mkdir -p sqlMesh && touch sqlMesh/osaa_mvp.db
 
-RUN chmod +x /run.sh
-CMD ["/run_pipeline.sh"]
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy only necessary files
+COPY src/ src/
+COPY sqlMesh/ sqlMesh/
+COPY entrypoint.sh .
+
+# Set PYTHONPATH
+ENV PYTHONPATH=/app/src
+
+# Make scripts executable
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["etl"]
