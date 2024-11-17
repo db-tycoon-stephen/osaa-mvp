@@ -1,0 +1,12 @@
+.git
+.env
+.venv
+__pycache__
+*.pyc
+.DS_Store
+datalake/
+scratchpad/
+dashboards/
+sqlMesh/.cache/*
+sqlMesh/logs
+sqlMesh/*.db

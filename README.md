@@ -5,34 +5,40 @@
 This project implements a **Data Pipeline Minimum Viable Product** (MVP) for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging Ibis, DuckDB, the Parquet format and S3 to create an efficient and scalable data processing system. The pipeline ingests data from various sources, transforms it, and stores it in a data lake structure, enabling easy access and analysis.
 
 ## Project Structure
-
 ```
 osaa-mvp/
 ├── datalake/                  # Local representation of the datalake
 │   ├── raw/                   # Source data files (CSV)
 │   │   ├── edu/               # Contains educational datasets
-│   │   ├── wdi/               # World Development Indicators datasets
+│   │   └── wdi/               # World Development Indicators datasets
 │   └── staging/               # Staging area for processed Parquet files
 ├── scratchpad/                # Temporary space for working code or notes
+├── sqlMesh/                   # SQLMesh configuration and models
+│   ├── models/                # SQLMesh model definitions
+│   └── osaa_mvp.db           # DuckDB database for SQLMesh transformations
 ├── src/
-│   └── pipeline/              # Core pipeline code
-│       ├── etl/               # Extract, Transform, Load scripts
-│       │   ├── sources/       # Source-specific data processing (e.g., WDI, EDU)
-│       ├── ingest/            # Handles data ingestion from local raw csv to S3 parquet
-│       ├── catalog.py         # Defines data catalog interactions
-│       ├── config.py          # Stores configuration details (e.g., paths, S3 settings)
-│       ├── utils.py           # Utility functions
-├── .env                       # Environment variables configuration
-├── justfile                   # Automates common tasks (installation, running pipelines)
-├── pyproject.toml             # Project metadata and dependencies
-├── requirements.txt           # Python package dependencies
+│   └── pipeline/             # Core pipeline code
+│       ├── etl/              # Extract, Transform, Load scripts
+│       │   └── sources/      # Source-specific data processing (e.g., WDI, EDU)
+│       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
+│       ├── upload/           # Handles DuckDB transformed data upload to S3
+│       ├── catalog.py        # Defines data catalog interactions
+│       ├── config.py         # Stores configuration details (e.g., paths, S3 settings)
+│       ├── utils.py          # Utility functions
+├── .env                      # Environment variables configuration
+├── dockerfile                # Docker container definition
+├── docker-compose.yml        # Docker services and environment setup
+├── entrypoint.sh             # Docker container entry point script
+├── justfile                  # Automates common tasks (installation, running pipelines) for local execution w/o Docker
+├── pyproject.toml            # Project metadata and dependencies
+└── requirements.txt          # Python package dependencies
 ```
-
 ## Key Components
 
 - **Ibis**: A Python framework for data analysis, used to write expressive and portable data transformations. It provides a high-level abstraction over SQL databases like DuckDB, allowing for cleaner, more Pythonic data manipulation.
 - **DuckDB**: A highly performant in-memory SQL engine for analytical queries, used for efficient data processing and querying, in order to process, convert, and interact with Parquet files and S3.
 - **Parquet**: A columnar storage file format, used for efficient data storage and retrieval. Used as the core format for storing processed data.
+- **SQLMesh**: A SQL-based data management tool, used to manage the SQLMesh models and transformations.
 - **S3**: Amazon Simple Storage Service, used as the cloud storage solution for the data lake, storing both raw (landing folder) and processed (staging folder) data.
 
 ## How It Works
@@ -49,6 +55,7 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
 - Python versions 3.9 to 3.11 (3.12 not supported)
 - AWS account with S3 access
 - Just (command runner) - for running predefined commands
+- Docker Desktop (optional) - for running the pipeline in a containerized environment
 
 ### Setup
 1. Clone the repository:
@@ -83,12 +90,23 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
    just install
    ```
 
-4. Set up your `.env` file with necessary s3 credentials
-    ```
-    KEY_ID= <your-s3-ID-key>
-    SECRET= <your-s3-secret-key>
-    URI= <your-s3-bucket-path>
-    ```
+4. Set up your environment variables:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env with your AWS credentials
+   # Required variables:
+   AWS_ACCESS_KEY_ID=<your-aws-access-key>
+   AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
+   AWS_DEFAULT_REGION=<your-aws-region>
+   S3_BUCKET_NAME=osaa-mvp
+   ```
+
+   These credentials are used for:
+   - S3 access for data storage
+   - DuckDB S3 integration
+   - Local development and Docker execution
 
 ## Raw Data Setup
 
@@ -154,7 +172,7 @@ Now your raw data is set up correctly, and you can proceed with running the pipe
 
 ### Running the Pipeline
 
-Use the `justfile` to run common tasks:
+#### Using the `justfile` to run common tasks:
 
 ```bash
 just ingest    # Run the ingestion process
@@ -167,6 +185,110 @@ You can see all available commands by running:
 ```bash
 just --list
 ```
+
+#### Running with Docker
+1. Build the Docker image:
+   ```
+   docker build -t osaa-mvp .
+   ```
+
+### Environment Configuration
+The pipeline supports different execution environments controlled through environment variables.
+The main variables that control behavior are:
+- TARGET: Controls both S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
+- USERNAME: Used for S3 paths in `dev` environment. Default is `default`
+
+####  Standard Execution
+Run the complete pipeline with default settings:
+```bash
+docker compose up
+```
+This uses the environment variables from your `.env` file.
+
+#### One-off Pipeline Components
+You can run specific parts of the pipeline:
+1. Run only the ingestion process:
+```bash
+docker compose run pipeline ingest
+```
+
+2. Run only the upload process:
+```bash
+docker compose run pipeline upload
+```
+
+
+#### Environment Variable Control at Runtime
+You can override environment variables when running specific commands without modifying your `.env` file. This is useful for:
+- Testing different environments
+- Running as different users
+- Temporary configuration changes
+
+#### Examples
+1. Run as a specific user in development:
+Uses `username` for S3 paths:
+```bash
+docker compose run -e TARGET=dev -e USERNAME=johndoe pipeline etl
+```
+
+This creates S3 paths like: `s3://osaa-poc/dev_johndoe/landing/`
+
+2. Run as integration environment:
+Uses `int` for S3 paths:
+```bash
+docker compose run -e TARGET=int pipeline etl
+```
+
+This creates S3 paths like: `s3://osaa-poc/int/landing/`
+
+3. Run as production environment:
+Uses `prod` for S3 paths:
+```bash
+docker compose run -e TARGET=prod pipeline etl
+```
+
+This creates S3 paths like: `s3://osaa-poc/prod/landing/`
+
+#### Testing Configuration
+To verify your environment settings before running the pipeline:
+```bash
+docker compose run pipeline python -m pipeline.config_test
+```
+This will output all configured paths and S3 locations based on your environment settings.
+
+
+#### S3 Folder Structure
+
+```
+s3://osaa-mvp/                           # Base bucket
+│
+├── dev_{username}/                      # For dev environment (e.g., johndoe/)
+│   ├── landing/                         # Raw data landing zone
+│   │   ├── edu/                         # Education data
+│   │   │   ├── SDG_LABEL.parquet
+│   │   │   ├── OPRI_DATA_NATIONAL.parquet
+│   │   │   ├── SDG_DATA_NATIONAL.parquet
+│   │   │   └── OPRI_LABEL.parquet
+│   │   └── wdi/                         # World Development Indicators
+│   │       ├── WDICSV.parquet
+│   │       └── WDISeries.parquet
+│   │
+│   ├── transformed/                     # Transformed data
+│   │   └── wdi/
+│   │       └── wdi_transformed.parquet
+│
+├── int/                                 # Integration environment (CICD)
+│   ├── landing/
+│   ├── transformed/
+│   └── staging/
+│
+└── prod/                                # Production environment
+    ├── landing/
+    ├── transformed/
+    └── staging/
+```
+
+
 
 ## Next Steps
 

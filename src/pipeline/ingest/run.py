@@ -13,7 +13,7 @@ class Ingest:
         Initialize the IngestProcess with S3 session and DuckDB connection.
         """
         self.s3_client, self.session = s3_init(return_session=True)
-        self.con = duckdb.connect("sqlMesh/osaa_mvp.db")
+        self.con = duckdb.connect(config.DB_PATH)
 
     def setup_s3_secret(self):
         """

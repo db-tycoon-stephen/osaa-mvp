@@ -12,7 +12,8 @@ class Upload:
         Initialize the IngestProcess with S3 session and DuckDB connection.
         """
         self.s3_client, self.session = s3_init(return_session=True)
-        self.con = duckdb.connect("sqlMesh/osaa_mvp.db")
+        self.con = duckdb.connect(config.DB_PATH)
+        self.env = config.TARGET
 
     def setup_s3_secret(self):
         """
@@ -36,21 +37,20 @@ class Upload:
             logger.error(f"Error setting up S3 secret: {e}")
             raise
 
-    def upload(self, table_name: str, s3_file_path: str):
+    def upload(self, schema_name: str, table_name: str, s3_file_path: str):
         """
-        Upload a Duckdb table to s3, given the table name and path.
+        Upload a Duckdb table to s3, given the schema and table name and path.
         """    
-
-        logger.info(f"Uploading created table {table_name}")
+        # Format the fully qualified table name with environment
+        fully_qualified_name = f"{schema_name}__{self.env}.{table_name}"
         
         self.con.sql(f"""
-            COPY (SELECT * FROM {table_name})
+            COPY (SELECT * FROM {fully_qualified_name})
             TO '{s3_file_path}'
             (FORMAT PARQUET)
-            """
-        )
+        """)
 
-        logger.info(f"Uploading created table {table_name}")
+        logger.info(f"Uploaded {fully_qualified_name} to S3: {s3_file_path}")
         
     def run(self):
         """
@@ -59,9 +59,9 @@ class Upload:
         try:
             self.setup_s3_secret()
             self.upload(
-                "intermediate.wdi",
+                "intermediate",
+                "wdi",
                 f's3://{config.S3_BUCKET_NAME}/{config.TRANSFORMED_AREA_FOLDER}/wdi/wdi_transformed.parquet'
-
             )
         finally:
             self.con.close()
