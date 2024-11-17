@@ -18,14 +18,15 @@ MASTER_DATA_DIR = os.path.join(STAGING_DATA_DIR, 'master')
 DB_PATH = os.getenv('DB_PATH', os.path.join(ROOT_DIR, 'sqlMesh', 'osaa_mvp.db'))
 
 # Environment configurations
-TARGET = os.getenv('TARGET', 'dev')  # dev, int, prod
-USERNAME = os.getenv('USERNAME', 'default')
+# Adjust S3 environment path based on target
+TARGET = os.getenv('TARGET', 'dev').lower()
+USERNAME = os.getenv('USERNAME', 'default').lower()
 
 # Adjust S3 environment path based on target
-S3_ENV = USERNAME if TARGET == 'dev' else TARGET
+S3_ENV = TARGET if TARGET in ['prod', 'int'] else f"{TARGET}_{USERNAME}"
 
 # S3 configurations with environment-based paths
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'osaa-poc')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'osaa-mvp')
 LANDING_AREA_FOLDER = f'{S3_ENV}/landing'
 TRANSFORMED_AREA_FOLDER = f'{S3_ENV}/transformed'
 STAGING_AREA_PATH = f'{S3_ENV}/staging'
