@@ -1,13 +1,13 @@
-# OSAA Data Pipeline PoC
+# OSAA Data Pipeline MVP
 
 ## Overview
 
-This project implements a **data pipeline Proof of Concept** (PoC) for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging Ibis, DuckDB, the Parquet format and S3 to create an efficient and scalable data processing system. The pipeline ingests data from various sources, transforms it, and stores it in a data lake structure, enabling easy access and analysis.
+This project implements a **Data Pipeline Minimum Viable Product** (MVP) for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging Ibis, DuckDB, the Parquet format and S3 to create an efficient and scalable data processing system. The pipeline ingests data from various sources, transforms it, and stores it in a data lake structure, enabling easy access and analysis.
 
 ## Project Structure
 
 ```
-osaa-poc/
+osaa-mvp/
 ├── datalake/                  # Local representation of the datalake
 │   ├── raw/                   # Source data files (CSV)
 │   │   ├── edu/               # Contains educational datasets
@@ -46,25 +46,44 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
 ## Getting Started
 
 ### Prerequisites
-
-- Python 3.9 or higher
+- Python versions 3.9 to 3.11 (3.12 not supported)
 - AWS account with S3 access
 - Just (command runner) - for running predefined commands
 
 ### Setup
-
 1. Clone the repository:
    ```
-   git clone https://github.com/mirianlima/osaa-poc.git
-   cd osaa-poc
+   git clone https://github.com/UN-OSAA/osaa-mvp.git
+   cd osaa-mvp
    ```
 
-2. Install dependencies using `just`:
+2. Check if `just` is installed:
+   ```
+   just --version
+   ```
+   If `just` is not installed, follow the instructions below to install it:
+
+   - On macOS, you can use Homebrew:
+     ```
+     brew install just
+     ```
+
+   - On Linux, you can use the package manager for your distribution. For example, on Ubuntu:
+     ```
+     sudo apt install just
+     ```
+
+   - On Windows, you can use Scoop:
+     ```
+     scoop install just
+     ```
+
+3. Install dependencies using `just`:
    ```
    just install
    ```
 
-3. Set up your `.env` file with necessary s3 credentials
+4. Set up your `.env` file with necessary s3 credentials
     ```
     KEY_ID= <your-s3-ID-key>
     SECRET= <your-s3-secret-key>
@@ -75,15 +94,32 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
 
 The raw data for this project is too large to be directly included in the GitHub repository. Instead, it's compressed and stored using Git Large File Storage (LFS). Follow these steps to set up the raw data correctly:
 
-1. Make sure Git LFS is installed:
-    ```
-    git lfs install
-    ```
+1. Install Git LFS:
 
-2. Clone the repository (if you haven't already):
+   - **macOS**: Use Homebrew to install Git LFS:
+     ```
+     brew install git-lfs
+     ```
+
+   - **Linux**: Use your distribution's package manager. For example, on Ubuntu:
+     ```
+     sudo apt install git-lfs
+     ```
+
+   - **Windows**: Use the Git for Windows installer or a package manager like Scoop:
+     ```
+     scoop install git-lfs
+     ```
+
+2. Initialize Git LFS in your repository:
    ```
-   git clone https://github.com/mirianlima/osaa-poc.git
-   cd osaa-poc
+   git lfs install
+   ```
+
+3. Clone the repository (if you haven't already):
+   ```
+   git clone https://github.com/UN-OSAA/osaa-mvp.git
+   cd osaa-mvp
    ```
 
 3. Pull the LFS files:
@@ -120,9 +156,16 @@ Now your raw data is set up correctly, and you can proceed with running the pipe
 
 Use the `justfile` to run common tasks:
 
+```bash
+just ingest    # Run the ingestion process
+just transform # Run the SQLMesh transformations
+just upload    # Run the upload process
+just etl       # Run the complete pipeline (ingest → transform → upload)
 ```
-just ingest  # Run the ingestion process
-just etl     # Run the full ETL process
+
+You can see all available commands by running:
+```bash
+just --list
 ```
 
 ## Next Steps
@@ -144,9 +187,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Mirian Lima - mirian.lima@un.org
+Mirian Lima (Project Sponsor) - mirian.lima@un.org
+Stephen Sciortino (Principal Engineer, Consultant) - stephen.sciortino@un.org; stephen@databasetycoon.com
+Project Link: [https://github.com/UN-OSAA/osaa-mvp.git](https://github.com/UN-OSAA/osaa-mvp.git)
 
-Project Link: [https://github.com/mirianlima/osaa-poc](https://github.com/mirianlima/osaa-poc)
 
 ## Acknowledgement
 

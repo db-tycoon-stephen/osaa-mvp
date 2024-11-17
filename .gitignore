@@ -15,9 +15,11 @@ dev-requirements.txt
 datalake/
 scratchpad/
 dashboards/
+__MACOSX
 
 sqlMesh/.cache/*
 sqlMesh/logs
+sqlMesh/*.db
 
 *.pyc
 

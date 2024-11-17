@@ -42,12 +42,21 @@ ingest:
     @echo "Running the Ingest process..."
     @python -m pipeline.ingest.run
 
+# Run SQLMesh transformations
+transform:
+    echo "Running SQLMesh transformations..."
+    cd sqlMesh && sqlmesh plan --auto-apply
+
 # Run Upload pipeline with optional arguments for sources
 upload:
     @echo "Running the Upload process"
     @python -m pipeline.upload.run
 
+# Run the complete pipeline
+etl: ingest transform upload
+    @echo "Pipeline complete!"
+
 # Open the project repository in the browser
 repo:
     @echo "Opening the project repository in the browser..."
-    @open https://github.com/mirianlima/osaa-poc
+    @open https://github.com/UN-OSAA/osaa-mvp.git
