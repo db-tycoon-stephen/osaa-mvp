@@ -13,6 +13,6 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - TARGET=${TARGET}
-      - USER=${USER}
+      - USERNAME=${USERNAME}
       - DB_PATH=/app/sqlMesh/osaa_mvp.db
     command: etl

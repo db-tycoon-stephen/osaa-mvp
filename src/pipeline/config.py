@@ -19,7 +19,7 @@ DB_PATH = os.getenv('DB_PATH', os.path.join(ROOT_DIR, 'sqlMesh', 'osaa_mvp.db'))
 
 # Environment configurations
 TARGET = os.getenv('TARGET', 'dev')  # dev, int, prod
-USERNAME = os.getenv('USER', 'default')
+USERNAME = os.getenv('USERNAME', 'default')
 
 # Adjust S3 environment path based on target
 S3_ENV = USERNAME if TARGET == 'dev' else TARGET
