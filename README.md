@@ -83,12 +83,23 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
    just install
    ```
 
-4. Set up your `.env` file with necessary s3 credentials
-    ```
-    KEY_ID= <your-s3-ID-key>
-    SECRET= <your-s3-secret-key>
-    URI= <your-s3-bucket-path>
-    ```
+4. Set up your environment variables:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env with your AWS credentials
+   # Required variables:
+   AWS_ACCESS_KEY_ID=<your-aws-access-key>
+   AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
+   AWS_DEFAULT_REGION=<your-aws-region>
+   S3_BUCKET_NAME=osaa-poc
+   ```
+
+   These credentials are used for:
+   - S3 access for data storage
+   - DuckDB S3 integration
+   - Local development and Docker execution
 
 ## Raw Data Setup
 
