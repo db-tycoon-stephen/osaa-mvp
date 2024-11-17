@@ -2,7 +2,7 @@
 set dotenv-load
 
 # Project-specific variables
-package := "osaa-poc"
+package := "osaa-mvp"
 venv_dir := ".venv"
 requirements_file := "requirements.txt"
 target := env_var_or_default("TARGET", "dev")
@@ -46,7 +46,7 @@ ingest:
 # Run SQLMesh transformations
 transform:
     echo "Running SQLMesh transformations..."
-    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified {{target}}
+    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
 
 # Run Upload pipeline with optional arguments for sources
 upload:

@@ -1,10 +1,13 @@
 #!/bin/bash
+set -e  # Exit on error
+
 case "$1" in
   "ingest")
     python -m pipeline.ingest.run
     ;;
   "transform")
-    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified ${TARGET:-dev}
+    cd sqlMesh
+    sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     ;;
   "upload")
     python -m pipeline.upload.run
@@ -17,7 +20,8 @@ case "$1" in
     echo "End ingestion"
     
     echo "Start sqlMesh"
-    cd sqlMesh && sqlmesh run ${TARGET:-dev}
+    cd sqlMesh
+    sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
     
     cd ..
