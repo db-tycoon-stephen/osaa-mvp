@@ -25,5 +25,5 @@ jobs:
 
           - name: 'Build Inventory Image'
             run: |
-              docker build . --tag ghcr.io/UN-OSAA/osaa-mvp:latest
-              docker push ghcr.io/UN-OSAA/osaa-mvp:latest
+              docker build . --tag ghcr.io/un-osaa/osaa-mvp:latest
+              docker push ghcr.io/un-osaa/osaa-mvp:latest
