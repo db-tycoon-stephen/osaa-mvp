@@ -26,4 +26,4 @@ jobs:
 
     # Step 4: Run the container
     - name: Run the container
-      run: docker run --name osaa-mvp -d ghcr.io/un-osaa/osaa-mvp:latest
+      run: docker run --name osaa-mvp-test -d -e TARGET=int ghcr.io/un-osaa/osaa-mvp:latest transform_dry_run
