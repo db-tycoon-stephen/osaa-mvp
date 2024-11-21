@@ -1,0 +1,29 @@
+name: Run Container from GitHub Container Registry
+
+on:
+  push
+
+jobs:
+  run-container:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    # Step 2: Log in to GitHub Container Registry
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # Step 3: Pull the container image
+    - name: Pull the container image
+      run: docker pull ghcr.io/un-osaa/osaa-mvp:latest
+
+    # Step 4: Run the container
+    - name: Run the container
+      run: docker run --name osaa-mvp-test -d -e TARGET=int ghcr.io/un-osaa/osaa-mvp:latest transform_dry_run

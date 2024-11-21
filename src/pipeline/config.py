@@ -10,7 +10,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     # PROC_DATA_DIR = os.path.join(ROOT_DIR, 'processed')
 
 DATALAKE_DIR = os.path.join(ROOT_DIR, 'datalake')
-RAW_DATA_DIR = os.path.join(DATALAKE_DIR, 'raw')
+RAW_DATA_DIR = os.getenv('RAW_DATA_DIR', os.path.join(DATALAKE_DIR, 'raw'))
 STAGING_DATA_DIR = os.path.join(DATALAKE_DIR, 'staging')
 MASTER_DATA_DIR = os.path.join(STAGING_DATA_DIR, 'master')
 
@@ -18,12 +18,12 @@ MASTER_DATA_DIR = os.path.join(STAGING_DATA_DIR, 'master')
 DB_PATH = os.getenv('DB_PATH', os.path.join(ROOT_DIR, 'sqlMesh', 'osaa_mvp.db'))
 
 # Environment configurations
-# Adjust S3 environment path based on target
 TARGET = os.getenv('TARGET', 'dev').lower()
 USERNAME = os.getenv('USERNAME', 'default').lower()
 
-# Adjust S3 environment path based on target
 S3_ENV = TARGET if TARGET in ['prod', 'int'] else f"{TARGET}_{USERNAME}"
+
+ENABLE_S3_UPLOAD = os.getenv('ENABLE_S3_UPLOAD', 'true').lower() == 'true'
 
 # S3 configurations with environment-based paths
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'osaa-mvp')
