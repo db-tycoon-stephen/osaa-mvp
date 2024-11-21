@@ -45,8 +45,25 @@ ingest:
 
 # Run SQLMesh transformations
 transform:
-    echo "Running SQLMesh transformations..."
-    cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+    @echo "Running SQLMesh transformations..."
+    @cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+
+# Run SQLMesh transformations in dry-run mode (no S3 uploads)
+transform_dry_run:
+    @echo "Running dry-run pipeline..."
+    @export ENABLE_S3_UPLOAD=false && python -m pipeline.ingest.run
+    @echo "Local ingestion complete"
+    @cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+    @echo "Dry-run complete!"
+
+transform_dry_run:
+    @echo "Running dry-run pipeline..."
+    @export ENABLE_S3_UPLOAD=false
+    @export RAW_DATA_DIR=data/raw
+    @python -m pipeline.ingest.run
+    @echo "Local ingestion complete"
+    @cd sqlMesh && sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+    @echo "Dry-run complete!"
 
 # Run Upload pipeline with optional arguments for sources
 upload:
