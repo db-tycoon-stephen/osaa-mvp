@@ -18,8 +18,6 @@ osaa-mvp/
 │   └── osaa_mvp.db           # DuckDB database for SQLMesh transformations
 ├── src/
 │   └── pipeline/             # Core pipeline code
-│       ├── etl/              # Extract, Transform, Load scripts
-│       │   └── sources/      # Source-specific data processing (e.g., WDI, EDU)
 │       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
 │       ├── upload/           # Handles DuckDB transformed data upload to S3
 │       ├── catalog.py        # Defines data catalog interactions
@@ -30,9 +28,11 @@ osaa-mvp/
 ├── docker-compose.yml        # Docker services and environment setup
 ├── entrypoint.sh             # Docker container entry point script
 ├── justfile                  # Automates common tasks (installation, running pipelines) for local execution w/o Docker
-├── pyproject.toml            # Project metadata and dependencies
 └── requirements.txt          # Python package dependencies
 ```
+## System Architecture
+The system architecture diagram can be found in [system_architecture.md](system_architecture.md)
+
 ## Key Components
 
 - **Ibis**: A Python framework for data analysis, used to write expressive and portable data transformations. It provides a high-level abstraction over SQL databases like DuckDB, allowing for cleaner, more Pythonic data manipulation.
@@ -42,12 +42,29 @@ osaa-mvp/
 - **S3**: Amazon Simple Storage Service, used as the cloud storage solution for the data lake, storing both raw (landing folder) and processed (staging folder) data.
 
 ## How It Works
+The data pipeline consists of three main stages:
 
-### Ingestion Process
-The Ingest Pipeline reads raw CSV data from `datalake/raw/<source>`, processes it, converts it into Parquet format using DuckDB, and uploads the results to an S3 bucket under the `landing/<source>` folder.
+### Ingestion Process (`ingest/run.py`)
+- Reads raw CSV files from `datalake/raw/<source>` directories
+- Converts them to Parquet format using DuckDB
+- Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
+- Creates separate folders for different data sources (edu, wdi)
 
-### ETL Process
-The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), and outputs it into a master Parquet file and a DuckDB file, stored locally in `datalake/staging/master/` and optionally uploaded to `staging/master` folder in S3.
+### Transformation Process (SQLMesh)
+- Reads Parquet files from the S3 landing zone
+- Performs transformations using SQLMesh models:
+- Stores transformed data in local DuckDB database (`osaa_mvp.db`)
+- Outputs transformed data to S3 under `<env>/transformed/<schema>/` folders
+
+### Upload Process (`upload/run.py`)
+- Takes transformed data from the DuckDB database
+- Uploads final transformed datasets to S3 under `<env>/transformed/` directory
+- Currently focuses only on uploading WDI (World Development Indicators) transformed data
+
+The environment (`<env>`) in S3 paths is determined by configuration:
+   - Production: `prod/`
+   - Integration: `int/`
+   - Development: `dev_<username>/`
 
 ## Getting Started
 
@@ -94,13 +111,20 @@ The ETL Pipeline extracts data, transforms it (cleaning, filtering, joining), an
    ```bash
    # Copy the example environment file
    cp .env.example .env
+   ```
+   Edit .env with your AWS credentials
    
-   # Edit .env with your AWS credentials
-   # Required variables:
+   Required variables:
+   ```bash
+   # AWS Credentials
    AWS_ACCESS_KEY_ID=<your-aws-access-key>
    AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
    AWS_DEFAULT_REGION=<your-aws-region>
+
+   # S3 Configuration
    S3_BUCKET_NAME=osaa-mvp
+   TARGET=dev
+   USERNAME=<your-name>
    ```
 
    These credentials are used for:
