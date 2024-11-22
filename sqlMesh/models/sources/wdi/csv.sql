@@ -6,5 +6,6 @@ MODEL (
   SELECT
     *
   FROM
-    source.WDICSV
-  
+      read_parquet(
+        @s3_landing_path('wdi/WDICSV')
+    )

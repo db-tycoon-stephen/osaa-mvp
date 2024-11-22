@@ -3,6 +3,8 @@ gateways:
     connection:
       type: duckdb
       database: osaa_mvp.db
+      # Configure DuckDB with httpfs extension for S3 access
+      extensions: ['httpfs']
 
 default_gateway: local
 

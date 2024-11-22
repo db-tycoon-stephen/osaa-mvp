@@ -42,7 +42,10 @@ class Upload:
         Upload a Duckdb table to s3, given the schema and table name and path.
         """    
         # Format the fully qualified table name with environment
-        fully_qualified_name = f"{schema_name}__{self.env}.{table_name}"
+        if self.env == 'prod':
+            fully_qualified_name = f"{schema_name}.{table_name}"
+        else:
+            fully_qualified_name = f"{schema_name}__{self.env}.{table_name}"
         
         self.con.sql(f"""
             COPY (SELECT * FROM {fully_qualified_name})
