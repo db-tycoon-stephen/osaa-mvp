@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Create necessary directories and empty DB file
-RUN mkdir -p datalake/raw sqlMesh && touch sqlMesh/osaa_mvp.db
+# Create necessary directories
+RUN mkdir -p datalake/raw sqlMesh
+
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -13,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
 COPY sqlMesh/ sqlMesh/
 COPY entrypoint.sh .
+COPY data/ data/
 
 # Set PYTHONPATH
 ENV PYTHONPATH=/app/src

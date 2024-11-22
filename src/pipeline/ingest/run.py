@@ -10,15 +10,24 @@ logger = setup_logger(__name__)
 class Ingest:
     def __init__(self):
         """
-        Initialize the IngestProcess with S3 session and DuckDB connection.
+        Initialize the IngestProcess with DuckDB connection and optionally S3 session.
         """
-        self.s3_client, self.session = s3_init(return_session=True)
         self.con = duckdb.connect(config.DB_PATH)
+        if config.ENABLE_S3_UPLOAD:
+            self.s3_client, self.session = s3_init(return_session=True)
+        else:
+            logger.info("S3 upload disabled, skipping S3 initialization")
+            self.s3_client = None
+            self.session = None
 
     def setup_s3_secret(self):
         """
         Set up the S3 secret in DuckDB for S3 access.
         """
+        if not config.ENABLE_S3_UPLOAD:
+            logger.info("S3 upload disabled, skipping S3 secret setup")
+            return
+
         try:
             region = self.session.region_name
             credentials = self.session.get_credentials().get_frozen_credentials()
@@ -110,7 +119,7 @@ class Ingest:
 
     def convert_and_upload_files(self):
         """
-        Convert CSV files to Parquet and upload them to S3.
+        Convert CSV files to Parquet and optionally upload them to S3.
         """
         try:
             file_mapping = self.generate_file_to_s3_folder_mapping(config.RAW_DATA_DIR)
@@ -118,12 +127,17 @@ class Ingest:
 
                 local_file_path = os.path.join(config.RAW_DATA_DIR, s3_sub_folder, file_name_csv)
 
-                file_name_pq = f'{os.path.splitext(file_name_csv)[0]}.parquet'
+                # Only set up S3 path if uploads are enabled
+                s3_file_path = None
+                if config.ENABLE_S3_UPLOAD:
+                    file_name_pq = f'{os.path.splitext(file_name_csv)[0]}.parquet'
 
-                s3_file_path = f's3://{config.S3_BUCKET_NAME}/{config.LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}'
+                    s3_file_path = f's3://{config.S3_BUCKET_NAME}/{config.LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}'
+                    logger.info(f"Uploading to S3: {s3_file_path}")
+                else:
+                    logger.info("S3 upload disabled, skipping S3 path generation")
 
                 logger.info(f"Processing local file: {local_file_path}")
-                logger.info(f"Uploading to S3: {s3_file_path}")
 
                 if os.path.isfile(local_file_path):
                     self.convert_csv_to_parquet_and_upload(local_file_path, s3_file_path)

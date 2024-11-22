@@ -1,6 +1,7 @@
 import os
 import logging
 import boto3
+import pipeline.config as config
 
 ### LOGGER ###
 def setup_logger(script_name: str = None) -> logging.Logger:
@@ -36,6 +37,10 @@ def s3_init(return_session=False) -> boto3.client:
 
     :return: boto3 S3 client object
     """
+    if not config.ENABLE_S3_UPLOAD:
+        logger.info("S3 upload disabled, skipping S3 initialization")
+        return (None, None) if return_session else None
+
     from dotenv import load_dotenv
     load_dotenv()
 

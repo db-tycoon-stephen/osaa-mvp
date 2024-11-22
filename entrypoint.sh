@@ -9,6 +9,19 @@ case "$1" in
     cd sqlMesh
     sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     ;;
+  "transform_dry_run")
+    export ENABLE_S3_UPLOAD=false
+    export RAW_DATA_DIR=/app/data/raw
+    
+    echo "Start local ingestion"
+    python -m pipeline.ingest.run
+    echo "End ingestion"
+    
+    echo "Start sqlMesh"
+    cd sqlMesh
+    sqlmesh plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
+    echo "End sqlMesh"
+    ;;
   "upload")
     python -m pipeline.upload.run
     ;;
