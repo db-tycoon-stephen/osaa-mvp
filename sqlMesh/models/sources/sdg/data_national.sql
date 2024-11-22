@@ -7,5 +7,6 @@ MODEL (
   SELECT
     *
   FROM
-    source.SDG_DATA_NATIONAL
-  
+    read_parquet(
+        @s3_landing_path('edu/SDG_DATA_NATIONAL')
+    )

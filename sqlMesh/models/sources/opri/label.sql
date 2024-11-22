@@ -7,5 +7,6 @@ MODEL (
   SELECT
     *
   FROM
-    source.OPRI_LABEL
-  
+    read_parquet(
+        @s3_landing_path('edu/OPRI_LABEL')
+    )

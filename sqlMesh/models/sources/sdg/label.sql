@@ -7,4 +7,6 @@ MODEL (
   SELECT
     *
   FROM
-    source.SDG_LABEL
+    read_parquet(
+        @s3_landing_path('edu/SDG_LABEL')
+    )

@@ -6,4 +6,6 @@ MODEL (
   SELECT
     *
   FROM
-    source.WDISeries
+    read_parquet(
+        @s3_landing_path('wdi/WDISeries')
+    )

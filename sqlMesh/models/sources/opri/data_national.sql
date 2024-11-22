@@ -7,5 +7,7 @@ MODEL (
   SELECT
     *
   FROM
-    source.OPRI_DATA_NATIONAL
-  
+
+    read_parquet(
+        @s3_landing_path('edu/OPRI_DATA_NATIONAL')
+    )
