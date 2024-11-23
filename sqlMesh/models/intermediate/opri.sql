@@ -13,4 +13,5 @@ SELECT
   label.indicator_label_en::TEXT AS indicator_description
 FROM opri.data_national AS series
 LEFT JOIN opri.label AS label
-  ON series.indicator_id = label.indicator_id
+  ON series.indicator_id = label.indicator_id;
+  

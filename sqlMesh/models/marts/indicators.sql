@@ -35,4 +35,5 @@ FROM unioned
 ORDER BY
   year,
   country_id,
-  indicator_id
+  indicator_id;
+  
