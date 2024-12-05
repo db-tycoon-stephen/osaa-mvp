@@ -1,7 +1,11 @@
 MODEL (
     name sdg.label,
     kind FULL,
-    cron '@daily'
+    cron '@daily',
+    columns (
+      INDICATOR_ID TEXT,
+      INDICATOR_LABEL_EN TEXT
+    )
   );
 
   SELECT
