@@ -5,14 +5,6 @@ gateways:
       database: osaa_mvp.db
       # Configure DuckDB with httpfs extension for S3 access
       extensions: ['httpfs']
-    # state_connection:
-    #   type: postgres
-    #   host: ep-still-firefly-a5jpi497.us-east-2.aws.neon.tech
-    #   port: 5432
-    #   user: some_db_owner
-    #   password: {{ env_var ('POSTGRES_NEON_PASSWORD') }}
-    #   database: sqlmesh_state
-    #   pre_ping: True
 
 default_gateway: local
 
