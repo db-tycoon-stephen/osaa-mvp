@@ -20,9 +20,9 @@ def parse_fully_qualified_name(fqtn):
 @macro()
 def s3_landing_path(evaluator, subfolder_filename):
     """Construct S3 landing path."""
-    bucket = os.environ.get('S3_BUCKET_NAME', 'osaa-mvp')
-    target = os.environ.get('TARGET', 'prod')
-    username = os.environ.get('USERNAME', 'default')
+    bucket = os.environ.get('S3_BUCKET_NAME', 'osaa-mvp').lower()
+    target = os.environ.get('TARGET', 'prod').lower()
+    username = os.environ.get('USERNAME', 'default').lower()
 
     # Construct the environment path segment
     env_path = target if target in ['prod', 'int'] else f"{target}_{username}"
