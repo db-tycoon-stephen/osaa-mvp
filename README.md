@@ -174,11 +174,15 @@ You can run specific parts of the pipeline:
 docker compose run --rm pipeline ingest
 ```
 
-2. Run only the upload process:
+2. Run only the transform process:
+```bash
+docker compose run --rm pipeline transform
+```
+
+3. Run only the upload process:
 ```bash
 docker compose run --rm pipeline upload
 ```
-
 
 #### Environment Variable Control at Runtime
 You can override environment variables when running specific commands without modifying your `.env` file. This is useful for:
