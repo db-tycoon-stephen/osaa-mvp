@@ -9,7 +9,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     # RAW_DATA_DIR = os.path.join(ROOT_DIR, 'raw_data')
     # PROC_DATA_DIR = os.path.join(ROOT_DIR, 'processed')
 
-DATALAKE_DIR = os.path.join(ROOT_DIR, 'datalake')
+DATALAKE_DIR = os.path.join(ROOT_DIR, 'data')
 RAW_DATA_DIR = os.getenv('RAW_DATA_DIR', os.path.join(DATALAKE_DIR, 'raw'))
 STAGING_DATA_DIR = os.path.join(DATALAKE_DIR, 'staging')
 MASTER_DATA_DIR = os.path.join(STAGING_DATA_DIR, 'master')
