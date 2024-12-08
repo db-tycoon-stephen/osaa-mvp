@@ -1,6 +1,5 @@
 import os
 import logging
-from logging.handlers import RotatingFileHandler
 import sys
 import time
 import functools
@@ -8,12 +7,13 @@ from typing import Callable, Any, Tuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+import colorlog
 import pipeline.config as config
 
 ### LOGGER ###
 def setup_logger(name: str, log_dir: str = 'logs', log_level: int = logging.INFO):
     """
-    Create a logger with more robust configuration.
+    Create a logger with robust configuration and color support.
     
     :param name: Name of the logger
     :param log_dir: Directory to store log files
@@ -29,19 +29,33 @@ def setup_logger(name: str, log_dir: str = 'logs', log_level: int = logging.INFO
     # Clear existing handlers to prevent duplicate logs
     logger.handlers.clear()
     
-    # Console Handler
-    console_handler = logging.StreamHandler(sys.stdout)
+    # Console Handler with Color
+    console_handler = colorlog.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
     
-    # File Handler
+    # Colored Formatter
+    console_formatter = colorlog.ColoredFormatter(
+        '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        log_colors={
+            'DEBUG': 'cyan',
+            'INFO': 'green',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
+            'CRITICAL': 'red,bg_white'
+        },
+        secondary_log_colors={},
+        style='%'
+    )
+    console_handler.setFormatter(console_formatter)
+    
+    # File Handler (non-colored)
     log_file_path = os.path.join(log_dir, f'{name}.log')
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(logging.DEBUG)
     
-    # Formatters
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
+    # File Formatter
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(file_formatter)
     
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
