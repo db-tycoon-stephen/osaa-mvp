@@ -1,10 +1,23 @@
 # OSAA Data Pipeline MVP
 
+## Table of Contents
+- [Purpose](#purpose)
+- [How It Works](#how-it-works)
+- [Getting Started](#getting-started)
+- [Dependencies](#dependencies)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Purpose
 
-This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging Ibis, DuckDB, the Parquet format and S3 to create an efficient and scalable data processing system. 
+This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging modern data engineering tools to create an efficient and scalable data processing system.
 
-The pipeline ingests data from s3, transforms it, and stores it in a data lake structure, enabling easy access and analysis.
+### Key Technologies
+- **Ibis**: Provides a unified interface for data manipulation
+- **DuckDB**: In-memory analytical database for fast data processing
+- **Parquet**: Columnar storage format for efficient data storage
+- **S3**: Cloud storage for data lake architecture
 
 ## How It Works
 
@@ -15,32 +28,32 @@ The data pipeline consists of three main stages:
 - Reads raw CSV files from `datalake/raw/<source>` directories
 - Converts them to Parquet format using DuckDB
 - Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
-- Creates separate folders for different data sources (edu, wdi)
+- Creates folders for each data source:
+  - `edu`: Education-related datasets
+  - `wdi`: World Development Indicators
 
 #### Transformation Process (SQLMesh)
 - Reads Parquet files from the S3 landing zone
-- Performs transformations using SQLMesh models:
+- Performs data transformations using SQLMesh models
 - Stores transformed data in local DuckDB database (`osaa_mvp.db`)
 - Outputs transformed data to S3 under `<env>/transformed/<schema>/` folders
 
 #### Upload Process (`upload/run.py`)
 - Takes transformed data from the DuckDB database
 - Uploads final transformed datasets to S3 under `<env>/transformed/` directory
-- Currently focuses only on uploading WDI (World Development Indicators) transformed data
+- Currently focuses on uploading WDI (World Development Indicators) transformed data
 
 ### Environment Configuration
-The pipeline supports different execution environments controlled through environment variables. The main variables that control behavior are:
-- TARGET: Controls both S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
-- USERNAME: Used for S3 paths in `dev` environment. Default is `default`
+The pipeline supports different execution environments controlled through environment variables:
+- `TARGET`: Controls S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
+- `USERNAME`: Used for S3 paths in `dev` environment. Default is `default`
 
-The process will dynamically determine which path to use in s3 based on the current environment. For example, all the (`<env>`) parameters in the S3 paths listed above will map to these environment names:
-   - Production: `prod/`
-   - Integration: `int/`
-   - Development: `dev_<username>/`
+S3 path examples:
+- Production: `prod/`
+- Integration: `int/`
+- Development: `dev_<username>/`
 
 ## Getting Started
-
-There are several ways to interact with this project. Please find the appropriate instructions for your personal use case:
 
 ### User Profiles
 1. **Data Analyst/Policy Analyst** - You are a user of the data, and you need to run the data pipeline in your own development environment. Link to Instructions
@@ -48,7 +61,7 @@ There are several ways to interact with this project. Please find the appropriat
 
 
 ### Process for Data Analysts
-Please follow this section if your role is Data Analyst. Please see the definition of [Data Analyst](#user-profiles) above for more details.
+Please follow this section if your role is Data Analysts. Please see the definition of [Data Analyst](#user-profiles) above for more details.
 
 #### Prerequisites
 - AWS account with S3 access
