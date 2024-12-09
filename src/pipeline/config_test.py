@@ -1,9 +1,16 @@
+"""Test module for configuration settings and utilities.
+
+This module contains unit tests for configuration-related
+functions and utilities in the United Nations OSAA MVP project.
+"""
+
 import logging
+
 import pipeline.config as config
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Log the paths from the config
 logger.info(f"ROOT_DIR: {config.ROOT_DIR}")

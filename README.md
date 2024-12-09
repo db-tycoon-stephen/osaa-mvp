@@ -113,7 +113,7 @@ The environment (`<env>`) in S3 paths is determined by configuration:
    cp .env.example .env
    ```
    Edit .env with your AWS credentials
-   
+
    Required variables:
    ```bash
    # AWS Credentials
