@@ -77,18 +77,52 @@ etl: ingest transform upload
 
 # Rebuild the Docker container from scratch
 rebuild:
-    @echo "🔨 OSAA MVP: Rebuilding Docker container..."
+    @echo "🚀 OSAA MVP: Rebuilding Docker container..."
     @echo "   Stopping and removing existing containers..."
     @docker-compose down --rmi all --volumes
     @echo "   Building new container from scratch (no cache)..."
     @docker-compose build --no-cache
     @echo "✅ Docker container rebuilt successfully!"
-
-# Optional: Rebuild and start the container
-restart: rebuild
-    @echo "🚀 OSAA MVP: Starting rebuilt container..."
     @docker-compose up -d
     @echo "✅ Container started in detached mode!"
+
+# Run all tests
+test:
+    @echo "🧪 Running project tests..."
+    @pytest tests/
+
+# Run type checking
+typecheck:
+    @echo "🔍 Running type checks..."
+    @mypy src/
+
+# Run linters
+lint:
+    @echo "✨ Running linters..."
+    @flake8 src/
+    @black --check src/
+    @isort --check src/
+
+# Clean up development artifacts
+clean:
+    @echo "🧹 Cleaning up development artifacts..."
+    @find . -type d -name "__pycache__" -exec rm -rf {} +
+    @find . -type f -name "*.pyc" -delete
+    @rm -rf .mypy_cache .pytest_cache htmlcov
+
+# Run all pre-commit checks
+precommit:
+    @echo "🚦 Running all pre-commit checks..."
+    @pre-commit run --all-files
+
+# Safety check for dependencies
+safety:
+    @echo "🔒 Checking dependencies for known security vulnerabilities..."
+    @safety check
+
+# Full development validation
+validate: lint typecheck test safety
+    @echo "✅ All checks passed successfully!"
 
 # Open the project repository in the browser
 repo:
