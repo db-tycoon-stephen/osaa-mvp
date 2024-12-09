@@ -125,6 +125,16 @@ The environment (`<env>`) in S3 paths is determined by configuration:
    S3_BUCKET_NAME=osaa-mvp
    TARGET=dev
    USERNAME=<your-name>
+
+   # SQLMesh Configuration
+   # Postgres for the shared state db
+   POSTGRES_HOST=your_host
+   POSTGRES_PORT=your_port
+   POSTGRES_USER=your_user
+   POSTGRES_PASSWORD=your_pass
+   POSTGRES_DATABASE=your_database
+   # Specify Gateway
+   GATEWAY=your_gateway
    ```
 
    These credentials are used for:
