@@ -67,6 +67,18 @@ upload:
 etl: ingest transform upload
     @echo "Pipeline complete!"
 
+# Rebuild the Docker container from scratch
+rebuild:
+    @echo "Rebuilding Docker container..."
+    @docker-compose down --rmi all --volumes
+    @docker-compose build --no-cache
+    @echo "Container rebuild complete!"
+
+# Optional: Rebuild and start the container
+restart: rebuild-container
+    @docker-compose up -d
+    @echo "Container rebuilt and started!"
+
 # Open the project repository in the browser
 repo:
     @echo "Opening the project repository in the browser..."
