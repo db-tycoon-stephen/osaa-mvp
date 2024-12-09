@@ -27,7 +27,13 @@ class Upload:
         Sets up an S3 client, DuckDB connection, and retrieves the current
         environment target.
         """
+        logger.info("🚀 Initializing Upload Process")
+        logger.info(f"   Environment Target: {config.TARGET}")
+        logger.info(f"   Database Path: {config.DB_PATH}")
+
         self.s3_client, self.session = s3_init(return_session=True)
+        logger.info("   ✅ S3 Client Initialized")
+
         self.con = duckdb.connect(config.DB_PATH)
         self.env = config.TARGET
 
@@ -38,8 +44,13 @@ class Upload:
         Logs the setup process and handles any potential errors.
         """
         try:
+            logger.info("🔐 Setting up S3 Secret in DuckDB")
+
             region = self.session.region_name
             credentials = self.session.get_credentials().get_frozen_credentials()
+
+            logger.info(f"   AWS Region: {region}")
+            logger.info("   Creating S3 secret with AWS credentials")
 
             self.con.sql(
                 f"""
@@ -51,10 +62,10 @@ class Upload:
             );
             """
             )
-            logger.info("S3 secret setup in DuckDB.")
+            logger.info("✅ S3 secret successfully created in DuckDB")
 
         except Exception as e:
-            logger.error(f"Error setting up S3 secret: {e}")
+            logger.error(f"❌ Error setting up S3 secret: {e}")
             raise
 
     def upload(self, schema_name: str, table_name: str, s3_file_path: str) -> None:
@@ -89,13 +100,31 @@ class Upload:
         the database connection is closed after processing.
         """
         try:
+            logger.info("🔄 Starting Upload Process")
+            logger.info(f"   S3 Bucket: {config.S3_BUCKET_NAME}")
+            logger.info(f"   Transformed Area Folder: {config.TRANSFORMED_AREA_FOLDER}")
+
             self.setup_s3_secret()
+
             upload_path = (
                 f"s3://{config.S3_BUCKET_NAME}/"
                 f"{config.TRANSFORMED_AREA_FOLDER}/wdi/wdi_transformed.parquet"
             )
+
+            logger.info("📤 Uploading WDI Transformed Data")
+            logger.info("   Source: intermediate.wdi")
+            logger.info("   Destination: " + upload_path)
+
             self.upload("intermediate", "wdi", upload_path)
+
+            logger.info("✅ Upload process completed successfully!")
+
+        except Exception as e:
+            logger.error(f"❌ Error during upload process: {e}")
+            raise
+
         finally:
+            logger.info("🔒 Closing database connection")
             self.con.close()
 
 

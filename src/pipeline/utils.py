@@ -64,8 +64,10 @@ def s3_init(
     Returns:
         Boto3 S3 client object, or tuple of (S3 client, session) if return_session is True
     """
+    logger.info("🌐 Initializing S3 Client")
+
     if not config.ENABLE_S3_UPLOAD:
-        logger.info("S3 upload disabled, skipping S3 initialization")
+        logger.warning("   ⚠️ S3 upload is disabled")
         return (None, None) if return_session else None
 
     from dotenv import load_dotenv
@@ -81,7 +83,11 @@ def s3_init(
         aws_region = os.environ.get("AWS_DEFAULT_REGION") or os.getenv("AWS_DEFAULT_REGION")
 
         if not all([aws_access_key, aws_secret_key, aws_region]):
+            logger.error("   ❌ Missing required AWS credentials")
             raise ValueError("Missing required AWS credentials")
+
+        logger.info(f"   🌍 AWS Region: {aws_region}")
+        logger.info("   🔑 Initializing AWS Session")
 
         session = boto3.Session(
             aws_access_key_id=aws_access_key,
@@ -91,7 +97,7 @@ def s3_init(
 
         s3_client = session.client("s3")
 
-        logger.info("S3 client initialized successfully.")
+        logger.info("   ✅ S3 client initialized successfully")
 
         if return_session:
             return s3_client, session
@@ -99,7 +105,7 @@ def s3_init(
             return s3_client
 
     except Exception as e:
-        logger.error(f"Error initializing S3 client: {e}")
+        logger.error(f"   ❌ Error initializing S3 client: {e}")
         raise
 
 
@@ -115,11 +121,15 @@ def get_s3_file_paths(bucket_name: str, prefix: str) -> Dict[str, Dict[str, str]
         Dictionary of file paths organized by source folder.
     """
     try:
+        logger.info(f"🔍 Retrieving file paths from S3 bucket: {bucket_name}")
+        logger.info(f"   📂 Prefix: {prefix}")
+
         s3_prefix = prefix + "/"
 
         # Ensure s3_client is not None before calling get_paginator
         s3_client_result = s3_init()
         if s3_client_result is None:
+            logger.error("   ❌ S3 client initialization failed")
             raise ValueError("S3 client initialization failed")
 
         # Cast to boto3.client to resolve type checking issues
@@ -139,10 +149,14 @@ def get_s3_file_paths(bucket_name: str, prefix: str) -> Dict[str, Dict[str, str]
                     file_paths[source] = {}
                 file_paths[source][filename.split(".")[0]] = f"s3://{bucket_name}/{key}"
 
-        logger.info(f"Successfully retrieved file paths from S3 bucket {bucket_name}.")
+        logger.info(
+            "   ✅ Retrieved {} file paths".format(
+                sum(len(source_files) for source_files in file_paths.values())
+            )
+        )
         return file_paths
     except Exception as e:
-        logger.error(f"Error retrieving file paths from S3: {e}")
+        logger.error(f"   ❌ Error retrieving file paths from S3: {e}")
         raise
 
 
@@ -158,15 +172,21 @@ def download_s3_client(
         local_dir: The local directory to save downloaded files.
     """
     try:
+        logger.info(f"📥 Downloading files from S3 bucket: {s3_bucket_name}")
+        logger.info(f"   📂 Source Folder: {s3_folder}")
+        logger.info(f"   💾 Local Destination: {local_dir}")
+
         # Ensure the local directory exists
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
+            logger.info(f"   🆕 Created local directory: {local_dir}")
 
         # List objects in the specified S3 folder
         response = s3_client.list_objects_v2(Bucket=s3_bucket_name, Prefix=s3_folder)
 
         # Check if any objects are returned
         if "Contents" in response:
+            file_count = 0
             for obj in response["Contents"]:
                 s3_key = obj["Key"]
                 filename = s3_key.split("/")[-1]  # Take only the last part as filename
@@ -174,12 +194,15 @@ def download_s3_client(
 
                 # Download the file
                 s3_client.download_file(s3_bucket_name, s3_key, local_file_path)
-                logger.info(f"Successfully downloaded {s3_key} to {local_file_path}")
+                logger.info(f"   ✅ Downloaded {s3_key} to {local_file_path}")
+                file_count += 1
+
+            logger.info(f"📊 Successfully downloaded {file_count} files")
         else:
-            logger.warning(f"No files found in s3://{s3_bucket_name}/{s3_folder}")
+            logger.warning(f"   ⚠️ No files found in s3://{s3_bucket_name}/{s3_folder}")
 
     except Exception as e:
-        logger.error(f"Error downloading files from S3: {e}", exc_info=True)
+        logger.error(f"   ❌ Error downloading files from S3: {e}", exc_info=True)
         raise
 
 

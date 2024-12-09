@@ -23,10 +23,11 @@ def save_s3(table_exp: ibis.Expr, s3_path: str) -> None:
     """
     try:
         table_exp.to_parquet(s3_path)
-        logger.info(f"Table successfully uploaded to {s3_path}")
+        logger.info(f"📤 Table successfully uploaded to S3 path: {s3_path}")
+        logger.info(f"   🔍 Table details: {table_exp}")
 
     except Exception as e:
-        logger.error(f"Error uploading table to S3: {e}", exc_info=True)
+        logger.error(f"❌ Error uploading table to S3: {e}", exc_info=True)
         raise
 
 
@@ -39,10 +40,11 @@ def save_duckdb(table_exp: ibis.Expr, local_db: Any) -> None:
     """
     try:
         local_db.create_table("master", table_exp.execute(), overwrite=True)
-        logger.info("Table successfully created in persistent DuckDB")
+        logger.info("🗄️ Table successfully created in persistent DuckDB")
+        logger.info(f"   🔍 Table details: {table_exp}")
 
     except Exception as e:
-        logger.error(f"Error creating table in DuckDB file: {e}", exc_info=True)
+        logger.error(f"❌ Error creating table in DuckDB file: {e}", exc_info=True)
         raise
 
 
@@ -55,10 +57,11 @@ def save_parquet(table_exp: ibis.Expr, local_path: str) -> None:
     """
     try:
         table_exp.to_parquet(local_path)
-        logger.info(f"Table successfully saved to {local_path}")
+        logger.info(f"💾 Table successfully saved to local Parquet file: {local_path}")
+        logger.info(f"   🔍 Table details: {table_exp}")
 
     except Exception as e:
-        logger.error(f"Error saving table to local Parquet file: {e}", exc_info=True)
+        logger.error(f"❌ Error saving table to local Parquet file: {e}", exc_info=True)
         raise
 
 

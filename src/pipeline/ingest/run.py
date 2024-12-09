@@ -38,11 +38,17 @@ class Ingest:
         Sets up a DuckDB connection and optionally initializes an S3 session
         based on the configuration settings.
         """
+        logger.info("🚀 Initializing Ingest Process")
+        logger.info(f"   Database Path: {config.DB_PATH}")
+        logger.info(f"   S3 Upload Enabled: {config.ENABLE_S3_UPLOAD}")
+
         self.con = duckdb.connect(config.DB_PATH)
         if config.ENABLE_S3_UPLOAD:
+            logger.info("   Initializing S3 client...")
             self.s3_client, self.session = s3_init(return_session=True)
+            logger.info("   ✅ S3 Client Initialized")
         else:
-            logger.info("S3 upload disabled, skipping S3 initialization")
+            logger.warning("   ⚠️ S3 upload is disabled")
             self.s3_client = None
             self.session = None
 
@@ -170,7 +176,15 @@ class Ingest:
         Uploads to S3 if enabled in the configuration.
         """
         try:
+            logger.info("🔄 Starting File Conversion and Upload Process")
+            logger.info(f"   Raw Data Directory: {config.RAW_DATA_DIR}")
+            logger.info(f"   S3 Bucket: {config.S3_BUCKET_NAME}")
+            logger.info(f"   Landing Area Folder: {config.LANDING_AREA_FOLDER}")
+
             file_mapping = self.generate_file_to_s3_folder_mapping(config.RAW_DATA_DIR)
+
+            logger.info(f"📊 Found {len(file_mapping)} files to process")
+
             for file_name_csv, s3_sub_folder in file_mapping.items():
                 local_file_path = os.path.join(config.RAW_DATA_DIR, s3_sub_folder, file_name_csv)
 
@@ -183,20 +197,21 @@ class Ingest:
                         f"s3://{config.S3_BUCKET_NAME}/"
                         f"{config.LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}"
                     )
-                    logger.info(f"Uploading to S3: {s3_file_path}")
+                    logger.info(f"📤 Preparing S3 upload for: {s3_file_path}")
                 else:
-                    logger.info("S3 upload disabled, skipping S3 path generation")
+                    logger.warning("   ⚠️ S3 upload disabled, skipping S3 path generation")
 
-                logger.info(f"Processing local file: {local_file_path}")
+                logger.info(f"🔍 Processing local file: {local_file_path}")
 
                 if os.path.isfile(local_file_path):
                     self.convert_csv_to_parquet_and_upload(local_file_path, s3_file_path)
                 else:
-                    logger.warning(f"File not found: {local_file_path}")
-            logger.info("Ingestion process completed successfully.")
+                    logger.warning(f"❌ File not found: {local_file_path}")
+
+            logger.info("✅ Ingestion process completed successfully!")
 
         except Exception as e:
-            logger.error(f"Error during file ingestion: {e}")
+            logger.error(f"❌ Error during file ingestion: {e}")
             raise
 
     def run(self) -> None:
