@@ -92,7 +92,7 @@ Please follow this section if your role is Data Engineer. Please see the definit
    cp .env.example .env
    ```
    Edit .env with your AWS credentials
-   
+
    Required variables:
    ```bash
    # AWS Credentials
@@ -104,6 +104,16 @@ Please follow this section if your role is Data Engineer. Please see the definit
    S3_BUCKET_NAME=osaa-mvp
    TARGET=dev
    USERNAME=<your-name>
+
+   # SQLMesh Configuration
+   # Postgres for the shared state db
+   POSTGRES_HOST=your_host
+   POSTGRES_PORT=your_port
+   POSTGRES_USER=your_user
+   POSTGRES_PASSWORD=your_pass
+   POSTGRES_DATABASE=your_database
+   # Specify Gateway
+   GATEWAY=your_gateway
    ```
 
    These credentials are used for:
@@ -183,6 +193,13 @@ docker compose run --rm -e TARGET=prod pipeline etl
 ```
 
 This creates S3 paths like: `s3://osaa-poc/prod/landing/`
+
+4. Run using the shared postgres database as SQLMesh's state connection:
+```bash
+docker compose run --rm -e TARGET=dev -e USERNAME=johndoe -e GATEWAY=shared_state pipeline etl
+```
+
+If you specified your gateway in `.env` file to use a shared database for SQLMesh's state.
 
 ##### Invoke Using cli tools and the `justfile`
 
