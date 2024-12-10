@@ -58,8 +58,8 @@ def s3_landing_path(
         S3 path as a SQLGlot literal expression
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
-    target = os.environ.get("TARGET", "prod")
-    username = os.environ.get("USERNAME", "default")
+    target = os.environ.get("TARGET", "prod").lower()
+    username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
     env_path = target if target in ["prod", "int"] else f"{target}_{username}"
@@ -84,8 +84,8 @@ def s3_transformed_path(evaluator: t.Any, fqtn: t.Union[str, exp.Expression]) ->
         S3 path as a SQLGlot literal expression
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
-    target = os.environ.get("TARGET", "dev")
-    username = os.environ.get("USERNAME", "default")
+    target = os.environ.get("TARGET", "dev").lower()
+    username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
     env_path = target if target in ["prod", "int"] else f"{target}_{username}"
