@@ -7,23 +7,22 @@ from typing import Callable, Any, Tuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from pipeline.logging_config import create_logger, log_exception
 import colorlog
 import pipeline.config as config
 
 ### LOGGER ###
-def setup_logger(name: str, log_dir: str = 'logs', log_level: int = logging.INFO):
+def setup_logger(name, log_dir=None, log_level=logging.INFO):
     """
     Create a logger with robust configuration and color support.
     
     :param name: Name of the logger
     :param log_dir: Directory to store log files
-    :param log_level: Logging level
+    :param log_level: Logging level (default: logging.INFO)
     :return: Configured logger
     """
-    # Ensure log directory exists
-    os.makedirs(log_dir, exist_ok=True)
     
-    logger = logging.getLogger(name)
+    logger = create_logger(name)
     logger.setLevel(log_level)
     
     # Clear existing handlers to prevent duplicate logs
@@ -49,6 +48,10 @@ def setup_logger(name: str, log_dir: str = 'logs', log_level: int = logging.INFO
     console_handler.setFormatter(console_formatter)
     
     # File Handler (non-colored)
+    if log_dir is None:
+        log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    
     log_file_path = os.path.join(log_dir, f'{name}.log')
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(logging.DEBUG)
@@ -76,7 +79,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0,
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            logger = logging.getLogger(func.__module__)
+            logger = create_logger(func.__module__)
             current_delay = delay
             for attempt in range(1, max_attempts + 1):
                 try:
@@ -103,7 +106,7 @@ class ProcessMonitor:
         
         :param logger: Optional logger. If not provided, creates a default logger.
         """
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or create_logger(__name__)
     
     def track_processing_time(self, func: Callable) -> Callable:
         """
@@ -158,28 +161,89 @@ class ProcessMonitor:
 
 def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
     """
-    Initialize S3 client with error handling and optional session return.
+    Initialize S3 client with robust error handling and optional session return.
     
     :param return_session: If True, returns both client and session
     :return: S3 client, and optionally the session
     :raises ClientError: If S3 initialization fails
     """
-    try:
-        # Create a session
-        session = boto3.Session()
-        
-        # Create S3 client
-        s3_client = session.client('s3')
-        
-        # Optional logging of S3 client initialization
-        logger = logging.getLogger(__name__)
-        logger.info("S3 client initialized successfully")
-        
-        return (s3_client, session) if return_session else s3_client
+    logger = create_logger(__name__)
     
-    except ClientError as e:
-        logger = logging.getLogger(__name__)
-        logger.error(f"Failed to initialize S3 client: {e}")
+    try:
+        # Comprehensive logging of environment variables
+        logger.info("Checking AWS Environment Variables:")
+        logger.info(f"AWS_ACCESS_KEY_ID: {os.environ.get('AWS_ACCESS_KEY_ID', 'NOT SET')}")
+        logger.info(f"AWS_SECRET_ACCESS_KEY: {'*' * len(os.environ.get('AWS_SECRET_ACCESS_KEY', '')) or 'NOT SET'}")
+        logger.info(f"AWS_DEFAULT_REGION: {os.environ.get('AWS_DEFAULT_REGION', 'NOT SET')}")
+        
+        # Validate AWS credentials
+        access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        
+        # Comprehensive credential validation
+        if not access_key:
+            raise ValueError("AWS_ACCESS_KEY_ID is not set in environment variables")
+        
+        if not secret_key:
+            raise ValueError("AWS_SECRET_ACCESS_KEY is not set in environment variables")
+        
+        # Validate key format (basic sanity check)
+        if len(access_key) < 10 or len(secret_key) < 20:
+            raise ValueError("AWS credentials appear to be invalid or incomplete")
+        
+        # Check for default/placeholder credentials
+        if access_key.startswith('AKIA') and access_key.endswith('EXAMPLE'):
+            raise ValueError("Detected placeholder AWS access key. Please provide a valid key.")
+        
+        # Create a session with explicit credentials
+        try:
+            session = boto3.Session(
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name=region
+            )
+            
+            # Create S3 client
+            s3_client = session.client('s3')
+            
+            # Verify S3 access by attempting a simple operation
+            try:
+                # List buckets to verify credentials
+                s3_client.list_buckets()
+                logger.info("S3 client initialized successfully. Credentials are valid.")
+            except ClientError as access_error:
+                # More detailed logging for access errors
+                error_code = access_error.response['Error']['Code']
+                error_message = access_error.response['Error']['Message']
+                
+                logger.error(f"S3 Access Error: {error_code}")
+                logger.error(f"Detailed Error Message: {error_message}")
+                
+                if error_code == 'InvalidClientTokenId':
+                    raise ValueError(f"Invalid AWS Access Key ID: {access_key}. Please check your credentials.") from access_error
+                elif error_code == 'SignatureDoesNotMatch':
+                    raise ValueError("AWS Secret Access Key is incorrect. Please verify your credentials.") from access_error
+                else:
+                    raise
+            
+            return (s3_client, session) if return_session else s3_client
+        
+        except Exception as session_error:
+            logger.critical(f"Failed to create AWS session: {session_error}")
+            raise
+    
+    except (ValueError, ClientError) as e:
+        # Comprehensive error logging
+        logger.critical(f"AWS S3 Initialization Failed: {e}")
+        logger.critical("Troubleshooting Tips:")
+        logger.critical("1. Verify AWS_ACCESS_KEY_ID is correct")
+        logger.critical("2. Verify AWS_SECRET_ACCESS_KEY is correct")
+        logger.critical("3. Ensure AWS IAM user has S3 access")
+        logger.critical("4. Check network and firewall settings")
+        logger.critical("5. Verify the AWS credentials are current and not revoked")
+        
+        # Raise the original exception with enhanced context
         raise
 
 ### AWS S3 INTERACTIONS ###
@@ -209,11 +273,11 @@ def get_s3_file_paths(bucket_name: str, prefix: str) -> dict:
                     file_paths[source] = {}
                 file_paths[source][filename.split('.')[0]] = f"s3://{bucket_name}/{key}"
 
-        logger = logging.getLogger(__name__)
+        logger = create_logger(__name__)
         logger.info(f"Successfully retrieved file paths from S3 bucket {bucket_name}.")
         return file_paths
     except Exception as e:
-        logger = logging.getLogger(__name__)
+        logger = create_logger(__name__)
         logger.error(f"Error retrieving file paths from S3: {e}")
         raise
 
@@ -244,13 +308,13 @@ def download_s3_client(s3_client: boto3.client, s3_bucket_name: str, s3_folder: 
                 
                 # Download the file
                 s3_client.download_file(s3_bucket_name, s3_key, local_file_path)
-                logger = logging.getLogger(__name__)
+                logger = create_logger(__name__)
                 logger.info(f'Successfully downloaded {s3_key} to {local_file_path}')
         else:
-            logger = logging.getLogger(__name__)
+            logger = create_logger(__name__)
             logger.warning(f'No files found in s3://{s3_bucket_name}/{s3_folder}')
 
     except Exception as e:
-        logger = logging.getLogger(__name__)
+        logger = create_logger(__name__)
         logger.error(f'Error downloading files from S3: {e}', exc_info=True)
         raise

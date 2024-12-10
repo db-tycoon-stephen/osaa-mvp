@@ -4,11 +4,12 @@ import duckdb
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 
-from pipeline.utils import setup_logger, s3_init
-import pipeline.config as config
+from pipeline.utils import s3_init
+from pipeline.logging_config import create_logger, log_exception
+from pipeline.config import DB_PATH, ENABLE_S3_UPLOAD, S3_BUCKET_NAME, LANDING_AREA_FOLDER, RAW_DATA_DIR
 
-# Setup
-logger = setup_logger(__name__)
+# Create a logger for this module
+logger = create_logger(__name__)
 
 # Custom Exceptions
 class IngestError(Exception):
@@ -32,12 +33,12 @@ class Ingest:
         """
         try:
             # Validate DB path
-            if not os.path.exists(os.path.dirname(config.DB_PATH)):
-                os.makedirs(os.path.dirname(config.DB_PATH), exist_ok=True)
+            if not os.path.exists(os.path.dirname(DB_PATH)):
+                os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
             
-            self.con = duckdb.connect(config.DB_PATH)
+            self.con = duckdb.connect(DB_PATH)
             
-            if config.ENABLE_S3_UPLOAD:
+            if ENABLE_S3_UPLOAD:
                 try:
                     self.s3_client, self.session = s3_init(return_session=True)
                 except Exception as e:
@@ -58,7 +59,7 @@ class Ingest:
         
         :raises S3ConfigurationError: If there are issues setting up S3 secret
         """
-        if not config.ENABLE_S3_UPLOAD:
+        if not ENABLE_S3_UPLOAD:
             logger.info("S3 upload disabled, skipping S3 secret setup")
             return
 
@@ -183,17 +184,17 @@ class Ingest:
         Convert CSV files to Parquet and optionally upload them to S3.
         """
         try:
-            file_mapping = self.generate_file_to_s3_folder_mapping(config.RAW_DATA_DIR)
+            file_mapping = self.generate_file_to_s3_folder_mapping(RAW_DATA_DIR)
             for file_name_csv, s3_sub_folder in file_mapping.items():
 
-                local_file_path = os.path.join(config.RAW_DATA_DIR, s3_sub_folder, file_name_csv)
+                local_file_path = os.path.join(RAW_DATA_DIR, s3_sub_folder, file_name_csv)
 
                 # Only set up S3 path if uploads are enabled
                 s3_file_path = None
-                if config.ENABLE_S3_UPLOAD:
+                if ENABLE_S3_UPLOAD:
                     file_name_pq = f'{os.path.splitext(file_name_csv)[0]}.parquet'
 
-                    s3_file_path = f's3://{config.S3_BUCKET_NAME}/{config.LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}'
+                    s3_file_path = f's3://{S3_BUCKET_NAME}/{LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}'
                     logger.info(f"Uploading to S3: {s3_file_path}")
                 else:
                     logger.info("S3 upload disabled, skipping S3 path generation")
@@ -218,7 +219,7 @@ class Ingest:
         """
         try:
             # Setup S3 secret if enabled
-            if config.ENABLE_S3_UPLOAD:
+            if ENABLE_S3_UPLOAD:
                 self.setup_s3_secret()
             
             # Add your specific ingestion logic here
