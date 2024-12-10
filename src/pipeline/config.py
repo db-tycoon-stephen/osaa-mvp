@@ -4,6 +4,7 @@ from pipeline.exceptions import ConfigurationError
 import logging
 import colorlog
 from botocore.exceptions import ClientError
+import sys
 
 # get the local root directory 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -216,14 +217,9 @@ def validate_aws_credentials():
                 
                 # Specific handling for invalid access key
                 if error_code == 'InvalidAccessKeyId':
-                    detailed_error = (
-                        "Invalid AWS Access Key:\n"
-                        "  • Possible reasons:\n"
-                        "    - Deleted or deactivated key\n"
-                        "    - Wrong AWS account\n"
-                        "    - Revoked IAM credentials"
-                    )
+                    detailed_error = "Invalid AWS Access Key"
                     logger.error(detailed_error)
+                    logger.error(f"Error Details: {error_message}")
                     raise ConfigurationError(detailed_error) from list_error
                 
                 # Generic S3 access error
@@ -261,16 +257,4 @@ try:
     validate_config()
     validate_aws_credentials()
 except ConfigurationError as config_error:
-    # Log the error
-    logger.critical('-' * 40)
-    logger.critical('Critical Configuration Error')
-    logger.critical('-' * 40)
-    logger.critical(f"{config_error}")
-    logger.critical('-' * 40)
-    
-    # Print to stderr to ensure visibility
-    import sys
-    print(f"CRITICAL CONFIGURATION ERROR: {config_error}", file=sys.stderr)
-    
-    # Exit the application with a non-zero status code
     sys.exit(1)

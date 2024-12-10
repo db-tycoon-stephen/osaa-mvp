@@ -159,6 +159,21 @@ class ProcessMonitor:
         self.logger.critical(alert_message)
         # TODO: Implement actual alerting mechanism (e.g., email, Slack)
 
+def log_aws_initialization_error(error):
+    """
+    Comprehensive logging for AWS S3 initialization errors.
+    
+    :param error: The exception raised during AWS S3 initialization
+    """
+    logger = create_logger(__name__)
+    
+    # Comprehensive error logging
+    logger.critical(f"AWS S3 Initialization Failed: {error}")
+    logger.critical("Troubleshooting:")
+    logger.critical("1. Verify AWS credentials")
+    logger.critical("2. Check IAM user permissions")
+    logger.critical("3. Ensure AWS IAM user has S3 access")
+
 def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
     """
     Initialize S3 client with robust error handling and optional session return.
@@ -231,19 +246,12 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
         
         except Exception as session_error:
             logger.critical(f"Failed to create AWS session: {session_error}")
+            log_aws_initialization_error(session_error)
             raise
     
     except (ValueError, ClientError) as e:
-        # Comprehensive error logging
-        logger.critical(f"AWS S3 Initialization Failed: {e}")
-        logger.critical("Troubleshooting Tips:")
-        logger.critical("1. Verify AWS_ACCESS_KEY_ID is correct")
-        logger.critical("2. Verify AWS_SECRET_ACCESS_KEY is correct")
-        logger.critical("3. Ensure AWS IAM user has S3 access")
-        logger.critical("4. Check network and firewall settings")
-        logger.critical("5. Verify the AWS credentials are current and not revoked")
-        
-        # Raise the original exception with enhanced context
+        # Store the error for later handling
+        log_aws_initialization_error(e)
         raise
 
 ### AWS S3 INTERACTIONS ###
