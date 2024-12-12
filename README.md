@@ -25,7 +25,7 @@ This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the
 The data pipeline consists of three main stages:
 
 #### Ingestion Process (`ingest/run.py`)
-- Reads raw CSV files from `datalake/raw/<source>` directories
+- Reads raw CSV files from `data/raw/<source>` directories
 - Converts them to Parquet format using DuckDB
 - Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
 - Creates folders for each data source:
@@ -265,7 +265,7 @@ Please see details about each location below:
 
 ```
 osaa-mvp/
-├── datalake/                  # Local representation of the datalake
+├── data/                      # Local representation of the datalake
 │   ├── raw/                   # Source data files (CSV)
 │   │   ├── edu/               # Contains educational datasets
 │   │   └── wdi/               # World Development Indicators datasets
@@ -273,7 +273,7 @@ osaa-mvp/
 ├── scratchpad/                # Temporary space for working code or notes
 ├── sqlMesh/                   # SQLMesh configuration and models
 │   ├── models/                # SQLMesh model definitions
-│   └── osaa_mvp.db           # DuckDB database for SQLMesh transformations
+│   └── osaa_mvp.db            # DuckDB database for SQLMesh transformations
 ├── src/
 │   └── pipeline/             # Core pipeline code
 │       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
