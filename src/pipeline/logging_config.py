@@ -8,29 +8,39 @@ across the entire project.
 import logging
 import colorlog
 import sys
+import os
+from typing import Optional, Union
 
-def create_logger(name=None):
+def create_logger(
+    name: Optional[str] = None, 
+    log_level: Union[int, str] = logging.INFO, 
+    log_dir: Optional[str] = None,
+    log_file: Optional[str] = None
+):
     """
-    Create a structured, color-coded logger with clean output.
+    Create a structured, color-coded logger with optional file logging.
     
     :param name: Name of the logger (typically __name__)
+    :param log_level: Logging level (default: logging.INFO)
+    :param log_dir: Directory to store log files (optional)
+    :param log_file: Specific log file name (optional)
     :return: Configured logger instance
     """
     # Create logger
     logger = colorlog.getLogger(name or __name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(log_level)
     logger.propagate = False
 
     # Remove any existing handlers
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # Create console handler
+    # Create console handler with color
     console_handler = colorlog.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
     
     # Custom log format with clear structure
     formatter = colorlog.ColoredFormatter(
-        # Structured format with clear sections
         '%(log_color)s[%(levelname)s]%(reset)s '
         '%(blue)s[%(name)s]%(reset)s '
         '%(message)s',
@@ -45,6 +55,30 @@ def create_logger(name=None):
     )
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+
+    # Optional file logging
+    if log_dir or log_file:
+        # Ensure log directory exists
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        
+        # Determine log file path
+        if not log_file:
+            log_file = f"{name or 'pipeline'}.log"
+        
+        if log_dir:
+            log_file = os.path.join(log_dir, log_file)
+        
+        # Create file handler
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(log_level)
+        
+        # Plain text formatter for file logs
+        file_formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
 
     return logger
 

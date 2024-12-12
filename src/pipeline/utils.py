@@ -11,60 +11,6 @@ from pipeline.logging_config import create_logger, log_exception
 import colorlog
 import pipeline.config as config
 
-### LOGGER ###
-def setup_logger(name, log_dir=None, log_level=logging.INFO):
-    """
-    Create a logger with robust configuration and color support.
-    
-    :param name: Name of the logger
-    :param log_dir: Directory to store log files
-    :param log_level: Logging level (default: logging.INFO)
-    :return: Configured logger
-    """
-    
-    logger = create_logger(name)
-    logger.setLevel(log_level)
-    
-    # Clear existing handlers to prevent duplicate logs
-    logger.handlers.clear()
-    
-    # Console Handler with Color
-    console_handler = colorlog.StreamHandler(sys.stdout)
-    console_handler.setLevel(log_level)
-    
-    # Colored Formatter
-    console_formatter = colorlog.ColoredFormatter(
-        '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        log_colors={
-            'DEBUG': 'cyan',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROR': 'red',
-            'CRITICAL': 'red,bg_white'
-        },
-        secondary_log_colors={},
-        style='%'
-    )
-    console_handler.setFormatter(console_formatter)
-    
-    # File Handler (non-colored)
-    if log_dir is None:
-        log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'logs')
-    os.makedirs(log_dir, exist_ok=True)
-    
-    log_file_path = os.path.join(log_dir, f'{name}.log')
-    file_handler = logging.FileHandler(log_file_path)
-    file_handler.setLevel(logging.DEBUG)
-    
-    # File Formatter
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(file_formatter)
-    
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-    
-    return logger
-
 def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0, 
           exceptions: Tuple[type, ...] = (Exception,)) -> Callable:
     """

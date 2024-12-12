@@ -49,6 +49,17 @@ class S3OperationError(PipelineBaseError):
     """
     pass
 
+class S3ConfigurationError(S3OperationError):
+    """
+    Raised for S3 configuration or connection issues.
+    
+    Covers problems with:
+    - AWS credentials
+    - S3 client initialization
+    - Access configuration
+    """
+    pass
+
 class IngestError(PipelineBaseError):
     """
     Raised during the data ingestion process.
@@ -57,6 +68,18 @@ class IngestError(PipelineBaseError):
     - File conversion problems
     - Source data validation failures
     - Ingestion pipeline interruptions
+    """
+    pass
+
+class FileConversionError(IngestError):
+    """
+    Raised for errors during file conversion.
+    
+    Specific to issues encountered while converting files,
+    such as:
+    - Unsupported file formats
+    - Conversion process failures
+    - Data integrity issues during conversion
     """
     pass
 
