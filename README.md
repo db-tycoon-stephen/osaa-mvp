@@ -133,14 +133,14 @@ See the steps below to build and run the container
    docker build -t osaa-mvp .
    ```
 
-###### Testing Configuration
-To verify your environment settings before running the pipeline:
-```bash
-docker compose run --rm pipeline config_test
-```
-This will output all configured paths and S3 locations based on your environment settings. The container uses the environment variables from your `.env` file.
+### Environment Configuration
+The pipeline supports different execution environments controlled through environment variables.
+The main variables that control behavior are:
+- TARGET: Controls both S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
+- USERNAME: Used for S3 paths in `dev` environment. Default is `default`
+- GATEWAY: Used to specify whether to use a managed postgres database for SQLMesh's state connection. Possible values are `local` or `shared_state`. Default is `local`, which uses duckdb as the state connection.
 
-######  Default Execution
+####  Standard Execution
 Run the complete pipeline with default settings:
 ```bash
 docker compose up
