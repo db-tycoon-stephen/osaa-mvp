@@ -103,6 +103,3 @@ def log_exception(logger, e, context=None):
     logger.critical('  2. Verify input data')
     logger.critical('  3. Review system logs')
     logger.critical('  4. Consult project documentation')
-
-# Global logger for use in modules that don't specify a name
-default_logger = create_logger()

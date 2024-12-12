@@ -25,18 +25,6 @@ class ConfigurationError(PipelineBaseError):
     """
     pass
 
-class DataProcessingError(PipelineBaseError):
-    """
-    Raised when there are issues processing data.
-    
-    This exception covers errors related to:
-    - Data transformation
-    - Data validation
-    - Data parsing
-    - Unexpected data formats
-    """
-    pass
-
 class S3OperationError(PipelineBaseError):
     """
     Raised for S3-specific operation errors.
@@ -80,27 +68,5 @@ class FileConversionError(IngestError):
     - Unsupported file formats
     - Conversion process failures
     - Data integrity issues during conversion
-    """
-    pass
-
-class DatabaseError(PipelineBaseError):
-    """
-    Raised for database-related errors.
-    
-    Includes issues such as:
-    - Connection failures
-    - Query execution problems
-    - Data insertion/retrieval errors
-    """
-    pass
-
-class NetworkError(PipelineBaseError):
-    """
-    Raised for network-related communication issues.
-    
-    Covers problems like:
-    - Connection timeouts
-    - DNS resolution failures
-    - API communication errors
     """
     pass

@@ -1,5 +1,4 @@
 import ibis
-from pipeline.utils import setup_logger
 from pipeline.logging_config import create_logger, log_exception
 
 # Set up logging

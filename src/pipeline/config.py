@@ -37,9 +37,6 @@ LANDING_AREA_FOLDER = f'{S3_ENV}/landing'
 TRANSFORMED_AREA_FOLDER = f'{S3_ENV}/transformed'
 STAGING_AREA_PATH = f'{S3_ENV}/staging'
 
-# Local copy of master data
-LOCAL=True
-
 # Custom Exception for Configuration Errors
 class ConfigurationError(Exception):
     """Exception raised for configuration-related errors."""
