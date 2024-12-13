@@ -2,7 +2,7 @@ import duckdb
 
 import pipeline.config as config
 from pipeline.logging_config import create_logger
-from pipeline.utils import s3_init, setup_logger
+from pipeline.utils import s3_init
 
 # Setup
 logger = create_logger()
