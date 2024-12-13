@@ -15,7 +15,6 @@ mypy==1.8.0
 # Type Checking
 mypy-extensions==1.0.0
 numpy<2.0.0  # Pinning to numpy 1.x for compatibility
-pandas<3.0.0
 pandas<3.0.0  # Ensuring pandas is compatible with numpy 1.x
 pep8-naming==0.13.3
 
