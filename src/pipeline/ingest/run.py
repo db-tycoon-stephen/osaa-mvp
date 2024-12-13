@@ -8,8 +8,9 @@ import os
 import re
 
 import boto3
-import duckdb
 from botocore.exceptions import ClientError, NoCredentialsError
+import duckdb
+from typing import Dict, Optional
 
 from pipeline.config import ENABLE_S3_UPLOAD, LANDING_AREA_FOLDER, RAW_DATA_DIR, S3_BUCKET_NAME
 from pipeline.exceptions import (
