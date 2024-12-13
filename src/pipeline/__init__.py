@@ -21,7 +21,9 @@ def setup_package_logging() -> logging.Logger:
     console_handler.setLevel(logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     console_handler.setFormatter(formatter)
 
     # Add handler to logger

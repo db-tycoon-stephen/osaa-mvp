@@ -43,7 +43,9 @@ def create_logger(
 
     # Custom log format with clear structure
     formatter = colorlog.ColoredFormatter(
-        "%(log_color)s[%(levelname)s]%(reset)s " "%(blue)s[%(name)s]%(reset)s " "%(message)s",
+        "%(log_color)s[%(levelname)s]%(reset)s "
+        "%(blue)s[%(name)s]%(reset)s "
+        "%(message)s",
         log_colors={
             "DEBUG": "cyan",
             "INFO": "green",
@@ -74,7 +76,9 @@ def create_logger(
         file_handler.setLevel(log_level)
 
         # Plain text formatter for file logs
-        file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        file_formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 

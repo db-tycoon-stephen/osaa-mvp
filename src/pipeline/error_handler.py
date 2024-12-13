@@ -21,7 +21,9 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     """
     # Log the full traceback
     logger.critical(" UNHANDLED EXCEPTION ")
-    logger.critical("An unexpected error occurred that was not caught by local exception handlers.")
+    logger.critical(
+        "An unexpected error occurred that was not caught by local exception handlers."
+    )
 
     # Format traceback
     traceback_details = traceback.extract_tb(exc_traceback)

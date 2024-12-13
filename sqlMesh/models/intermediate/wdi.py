@@ -28,7 +28,6 @@ def execute(
     execution_time: datetime,
     **kwargs: t.Any,
 ) -> pd.DataFrame:
-
     # connect ibis to database
     con = ibis.duckdb.connect(DB_PATH)
 
@@ -58,7 +57,9 @@ def execute(
 
     print("Starting wdi_label")
     wdi = (
-        wdi_data.join(wdi_label, wdi_data.indicator_id == wdi_label.indicator_id, how="left")
+        wdi_data.join(
+            wdi_label, wdi_data.indicator_id == wdi_label.indicator_id, how="left"
+        )
         .cast({"year": "int64"})
         .select("country_id", "indicator_id", "year", "value", "indicator_label")
     )

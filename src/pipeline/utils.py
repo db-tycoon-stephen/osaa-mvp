@@ -78,11 +78,15 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
     try:
         # Comprehensive logging of environment variables
         logger.info("Checking AWS Environment Variables:")
-        logger.info(f"AWS_ACCESS_KEY_ID: {os.environ.get('AWS_ACCESS_KEY_ID', 'NOT SET')}")
+        logger.info(
+            f"AWS_ACCESS_KEY_ID: {os.environ.get('AWS_ACCESS_KEY_ID', 'NOT SET')}"
+        )
         logger.info(
             f"AWS_SECRET_ACCESS_KEY: {'*' * len(os.environ.get('AWS_SECRET_ACCESS_KEY', '')) or 'NOT SET'}"
         )
-        logger.info(f"AWS_DEFAULT_REGION: {os.environ.get('AWS_DEFAULT_REGION', 'NOT SET')}")
+        logger.info(
+            f"AWS_DEFAULT_REGION: {os.environ.get('AWS_DEFAULT_REGION', 'NOT SET')}"
+        )
 
         # Validate AWS credentials
         access_key = os.environ.get("AWS_ACCESS_KEY_ID")
@@ -94,7 +98,9 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
             raise ValueError("AWS_ACCESS_KEY_ID is not set in environment variables")
 
         if not secret_key:
-            raise ValueError("AWS_SECRET_ACCESS_KEY is not set in environment variables")
+            raise ValueError(
+                "AWS_SECRET_ACCESS_KEY is not set in environment variables"
+            )
 
         # Validate key format (basic sanity check)
         if len(access_key) < 10 or len(secret_key) < 20:
@@ -102,12 +108,16 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
 
         # Check for default/placeholder credentials
         if access_key.startswith("AKIA") and access_key.endswith("EXAMPLE"):
-            raise ValueError("Detected placeholder AWS access key. Please provide a valid key.")
+            raise ValueError(
+                "Detected placeholder AWS access key. Please provide a valid key."
+            )
 
         # Create a session with explicit credentials
         try:
             session = boto3.Session(
-                aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name=region,
             )
 
             # Create S3 client
@@ -117,7 +127,9 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
             try:
                 # List buckets to verify credentials
                 s3_client.list_buckets()
-                logger.info("S3 client initialized successfully. Credentials are valid.")
+                logger.info(
+                    "S3 client initialized successfully. Credentials are valid."
+                )
             except ClientError as access_error:
                 # More detailed logging for access errors
                 error_code = access_error.response["Error"]["Code"]

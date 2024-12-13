@@ -12,7 +12,12 @@ from botocore.exceptions import ClientError, NoCredentialsError
 import duckdb
 from typing import Dict, Optional
 
-from pipeline.config import ENABLE_S3_UPLOAD, LANDING_AREA_FOLDER, RAW_DATA_DIR, S3_BUCKET_NAME
+from pipeline.config import (
+    ENABLE_S3_UPLOAD,
+    LANDING_AREA_FOLDER,
+    RAW_DATA_DIR,
+    S3_BUCKET_NAME,
+)
 from pipeline.exceptions import (
     FileConversionError,
     IngestError,
@@ -109,7 +114,9 @@ class Ingest:
         try:
             # Extract table name from filename
             table_name = re.search(r"[^/]+(?=\.)", local_file_path)
-            table_name = table_name.group(0).replace("-", "_") if table_name else "UNNAMED"
+            table_name = (
+                table_name.group(0).replace("-", "_") if table_name else "UNNAMED"
+            )
             fully_qualified_name = "source." + table_name
 
             self.con.sql("CREATE SCHEMA IF NOT EXISTS source")
@@ -132,7 +139,9 @@ class Ingest:
             """
             )
 
-            logger.info(f"Successfully converted and uploaded {local_file_path} to {s3_file_path}")
+            logger.info(
+                f"Successfully converted and uploaded {local_file_path} to {s3_file_path}"
+            )
 
         except FileNotFoundError as e:
             logger.error(f"File not found error: {e}")
@@ -166,7 +175,9 @@ class Ingest:
             for file in files:
                 # Skip files starting with symbols
                 if not re.match(symbols, file) and file.endswith(".csv"):
-                    file_to_s3_folder_mapping[file] = rel_subdir if rel_subdir != "." else ""
+                    file_to_s3_folder_mapping[file] = (
+                        rel_subdir if rel_subdir != "." else ""
+                    )
 
         logger.info(f"Generated file mapping: {file_to_s3_folder_mapping}")
         return file_to_s3_folder_mapping
@@ -178,18 +189,20 @@ class Ingest:
         try:
             file_mapping = self.generate_file_to_s3_folder_mapping(RAW_DATA_DIR)
             for file_name_csv, s3_sub_folder in file_mapping.items():
-                local_file_path = os.path.join(RAW_DATA_DIR, s3_sub_folder, file_name_csv)
+                local_file_path = os.path.join(
+                    RAW_DATA_DIR, s3_sub_folder, file_name_csv
+                )
 
                 # Convert filename to Parquet
                 file_name_pq = f"{os.path.splitext(file_name_csv)[0]}.parquet"
 
-                s3_file_path = (
-                    f"s3://{S3_BUCKET_NAME}/{LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}"
-                )
+                s3_file_path = f"s3://{S3_BUCKET_NAME}/{LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}"
                 logger.info(f"Uploading to S3: {s3_file_path}")
 
                 if os.path.isfile(local_file_path):
-                    self.convert_csv_to_parquet_and_upload(local_file_path, s3_file_path)
+                    self.convert_csv_to_parquet_and_upload(
+                        local_file_path, s3_file_path
+                    )
                 else:
                     logger.warning(f"File not found: {local_file_path}")
 

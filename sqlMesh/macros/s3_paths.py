@@ -18,7 +18,9 @@ from sqlglot import exp
 from sqlmesh import macro
 
 
-def parse_fully_qualified_name(fqtn: t.Union[str, exp.Expression]) -> t.Tuple[str, str, str]:
+def parse_fully_qualified_name(
+    fqtn: t.Union[str, exp.Expression],
+) -> t.Tuple[str, str, str]:
     """Parse a fully qualified table name into its components.
 
     Args:
@@ -39,7 +41,9 @@ def parse_fully_qualified_name(fqtn: t.Union[str, exp.Expression]) -> t.Tuple[st
 
     parts = fqtn.split(".")
     if len(parts) != 3:
-        raise ValueError("Fully qualified table name must be in the format 'database.schema.table'")
+        raise ValueError(
+            "Fully qualified table name must be in the format 'database.schema.table'"
+        )
     database, schema, table = parts
     return database, schema, table
 
@@ -73,7 +77,9 @@ def s3_landing_path(
 
 
 @macro()
-def s3_transformed_path(evaluator: t.Any, fqtn: t.Union[str, exp.Expression]) -> exp.Literal:
+def s3_transformed_path(
+    evaluator: t.Any, fqtn: t.Union[str, exp.Expression]
+) -> exp.Literal:
     """Construct S3 transformed path.
 
     Args:

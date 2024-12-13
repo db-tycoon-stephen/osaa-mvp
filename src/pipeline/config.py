@@ -73,7 +73,9 @@ def create_logger():
     # Custom log format with clear structure
     formatter = colorlog.ColoredFormatter(
         # Structured format with clear sections
-        "%(log_color)s[%(levelname)s]%(reset)s " "%(blue)s[%(name)s]%(reset)s " "%(message)s",
+        "%(log_color)s[%(levelname)s]%(reset)s "
+        "%(blue)s[%(name)s]%(reset)s "
+        "%(message)s",
         log_colors={
             "DEBUG": "cyan",
             "INFO": "green",
@@ -111,13 +113,17 @@ def validate_config():
 
     for dir_name, dir_path in required_dirs:
         if not dir_path:
-            raise ConfigurationError(f"Missing required directory configuration: {dir_name}")
+            raise ConfigurationError(
+                f"Missing required directory configuration: {dir_name}"
+            )
 
         # Create directory if it doesn't exist
         try:
             os.makedirs(dir_path, exist_ok=True)
         except Exception as e:
-            raise ConfigurationError(f"Unable to create directory {dir_name} at {dir_path}: {e}")
+            raise ConfigurationError(
+                f"Unable to create directory {dir_name} at {dir_path}: {e}"
+            )
 
     # Validate DB Path
     if not DB_PATH:
@@ -128,12 +134,16 @@ def validate_config():
         db_dir = os.path.dirname(DB_PATH)
         os.makedirs(db_dir, exist_ok=True)
     except Exception as e:
-        raise ConfigurationError(f"Unable to create database directory at {db_dir}: {e}")
+        raise ConfigurationError(
+            f"Unable to create database directory at {db_dir}: {e}"
+        )
 
     # Validate S3 Configuration
     if ENABLE_S3_UPLOAD:
         if not S3_BUCKET_NAME:
-            raise ConfigurationError("S3 upload is enabled but no bucket name is specified")
+            raise ConfigurationError(
+                "S3 upload is enabled but no bucket name is specified"
+            )
 
         # Validate S3 folder configurations
         s3_folders = [
@@ -144,7 +154,9 @@ def validate_config():
 
         for folder_name, folder_path in s3_folders:
             if not folder_path:
-                raise ConfigurationError(f"Missing S3 folder configuration: {folder_name}")
+                raise ConfigurationError(
+                    f"Missing S3 folder configuration: {folder_name}"
+                )
 
     # Validate environment configurations
     if not TARGET:
@@ -176,7 +188,11 @@ def validate_aws_credentials():
         logger.info("Validating AWS Credentials")
 
         # Check required environment variables
-        required_vars = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION"]
+        required_vars = [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_DEFAULT_REGION",
+        ]
 
         # Log environment variable status
         logger.debug("Checking Environment Variables:")
