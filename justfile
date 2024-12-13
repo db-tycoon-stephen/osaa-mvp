@@ -97,24 +97,12 @@ typecheck:
     @echo "🔍 Running type checks..."
     @mypy src/
 
-# Run linters
-lint:
-    @echo "✨ Running linters..."
-    @flake8 src/
-    @black --check src/
-    @isort --check src/
-
 # Clean up development artifacts
 clean:
     @echo "🧹 Cleaning up development artifacts..."
     @find . -type d -name "__pycache__" -exec rm -rf {} +
     @find . -type f -name "*.pyc" -delete
     @rm -rf .mypy_cache .pytest_cache htmlcov
-
-# Run all pre-commit checks
-precommit:
-    @echo "🚦 Running all pre-commit checks..."
-    @pre-commit run --all-files
 
 # Safety check for dependencies
 safety:
