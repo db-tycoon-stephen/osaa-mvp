@@ -40,7 +40,9 @@ def process_edu_data(
         return None
 
     try:
-        logger.info(f"Processing {dataset_name.upper()} data from tables '{data}' and '{label}'...")
+        logger.info(
+            f"Processing {dataset_name.upper()} data from tables '{data}' and '{label}'..."
+        )
 
         tdata = connection.table(data).rename("snake_case")
         tlabel = connection.table(label).rename("snake_case")

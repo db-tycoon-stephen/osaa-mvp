@@ -1,16 +1,11 @@
-"""Upload module for data transfer to S3.
-
-This module handles the upload of processed data to S3 storage
-for the United Nations OSAA MVP project.
-"""
-
 import duckdb
 
 import pipeline.config as config
-from pipeline.utils import s3_init, setup_logger
+from pipeline.logging_config import create_logger
+from pipeline.utils import s3_init
 
 # Setup
-logger = setup_logger(__name__)
+logger = create_logger()
 
 
 class Upload:
@@ -68,13 +63,44 @@ class Upload:
             logger.error(f"❌ Error setting up S3 secret: {e}")
             raise
 
-    def upload(self, schema_name: str, table_name: str, s3_file_path: str) -> None:
-        """Upload a DuckDB table to S3.
+    def get_sqlmesh_models(self):
+        """
+        Dynamically discover SQLMesh models across all schemas.
 
-        Args:
-            schema_name: Name of the schema containing the table.
-            table_name: Name of the table to upload.
-            s3_file_path: Destination S3 file path for the uploaded table.
+        :return: List of tuples (schema, table) for SQLMesh models
+        """
+        try:
+            # Query to find all tables in schemas that look like SQLMesh managed schemas
+            schemas_query = """
+            SELECT DISTINCT schema_name
+            FROM information_schema.schemata
+            WHERE schema_name LIKE '%__dev' OR schema_name LIKE '%__prod'
+            """
+            schemas = self.con.execute(schemas_query).fetchall()
+
+            models = []
+            for (schema,) in schemas:
+                # Query tables in each schema
+                tables_query = f"""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = '{schema}'
+                """
+                tables = self.con.execute(tables_query).fetchall()
+
+                # Add each table to models list
+                models.extend([(schema, table[0]) for table in tables])
+
+            logger.info(f"Discovered {len(models)} SQLMesh models")
+            return models
+
+        except Exception as e:
+            logger.error(f"Error discovering SQLMesh models: {e}")
+            raise
+
+    def upload(self, schema_name: str, table_name: str, s3_file_path: str):
+        """
+        Upload a Duckdb table to s3, given the schema and table name and path.
         """
         # Format the fully qualified table name with environment
         if self.env == "prod":
@@ -82,50 +108,48 @@ class Upload:
         else:
             fully_qualified_name = f"{schema_name}__{self.env}.{table_name}"
 
-        # Use parameterized query to prevent SQL injection
-        copy_table_query = """
-            COPY (SELECT * FROM ?)
-            TO ?
-            (FORMAT PARQUET)
+        # Modify the query to use the correct table name
+        self.con.sql(
+            f"""
+            COPY (SELECT * FROM {schema_name}.{table_name})
+            TO '{s3_file_path}'
+            (FORMAT 'parquet', OVERWRITE_OR_IGNORE 1);
         """
+        )
+        logger.info(f"Successfully uploaded {fully_qualified_name} to {s3_file_path}")
 
-        self.con.execute(copy_table_query, [fully_qualified_name, s3_file_path])
-
-        logger.info(f"Uploaded {fully_qualified_name} to S3: {s3_file_path}")
-
-    def run(self) -> None:
-        """Run the entire upload process.
-
-        Sets up S3 secret, uploads specified tables, and ensures
-        the database connection is closed after processing.
+    def run(self):
+        """
+        Execute the full upload process.
         """
         try:
-            logger.info("🔄 Starting Upload Process")
-            logger.info(f"   S3 Bucket: {config.S3_BUCKET_NAME}")
-            logger.info(f"   Transformed Area Folder: {config.TRANSFORMED_AREA_FOLDER}")
-
+            # Set up S3 secret in DuckDB
             self.setup_s3_secret()
 
-            upload_path = (
-                f"s3://{config.S3_BUCKET_NAME}/"
-                f"{config.TRANSFORMED_AREA_FOLDER}/wdi/wdi_transformed.parquet"
-            )
+            # Dynamically get SQLMesh models
+            sqlmesh_models = self.get_sqlmesh_models()
 
-            logger.info("📤 Uploading WDI Transformed Data")
-            logger.info("   Source: intermediate.wdi")
-            logger.info("   Destination: " + upload_path)
+            # Define upload targets dynamically
+            upload_targets = []
+            for schema, table in sqlmesh_models:
+                # Determine the category (edu or wdi) based on the table name or schema
+                category = "edu" if "edu" in schema.lower() else "wdi"
 
-            self.upload("intermediate", "wdi", upload_path)
+                # Construct S3 path
+                s3_path = f"s3://{config.S3_BUCKET_NAME}/{config.TRANSFORMED_AREA_FOLDER}/{category}/{table}.parquet"
 
-            logger.info("✅ Upload process completed successfully!")
+                upload_targets.append((schema, table, s3_path))
+
+            # Execute uploads
+            for schema, table, s3_path in upload_targets:
+                self.upload(schema, table, s3_path)
+
+            logger.info("Upload process completed successfully.")
+            logger.info(f"Uploaded {len(upload_targets)} models to S3")
 
         except Exception as e:
-            logger.error(f"❌ Error during upload process: {e}")
+            logger.error(f"Upload process failed: {e}")
             raise
-
-        finally:
-            logger.info("🔒 Closing database connection")
-            self.con.close()
 
 
 if __name__ == "__main__":

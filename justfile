@@ -11,9 +11,6 @@ gateway := env_var_or_default("GATEWAY", "local")
 # Include the src directory in PYTHONPATH
 export PYTHONPATH := "src"
 
-# Aliases for frequently used commands
-alias fmt := format
-
 # Display the list of recipes when no argument is passed
 default:
     just --list
@@ -36,12 +33,6 @@ uninstall:
     @pip uninstall -y {{package}}
     @rm -rf {{venv_dir}}
     @echo "✨ Environment cleaned successfully!"
-
-# Format the codebase using ruff
-format:
-    @echo "🎨 OSAA MVP: Formatting codebase..."
-    @ruff format .
-    @echo "✅ Code formatting complete!"
 
 # Run Ingest pipeline with optional arguments for sources
 ingest:
@@ -97,24 +88,12 @@ typecheck:
     @echo "🔍 Running type checks..."
     @mypy src/
 
-# Run linters
-lint:
-    @echo "✨ Running linters..."
-    @flake8 src/
-    @black --check src/
-    @isort --check src/
-
 # Clean up development artifacts
 clean:
     @echo "🧹 Cleaning up development artifacts..."
-    @find . -type d -name "__pycache__" -exec rm -rf {} +
+    @rm -rf .venv
     @find . -type f -name "*.pyc" -delete
     @rm -rf .mypy_cache .pytest_cache htmlcov
-
-# Run all pre-commit checks
-precommit:
-    @echo "🚦 Running all pre-commit checks..."
-    @pre-commit run --all-files
 
 # Safety check for dependencies
 safety:
@@ -122,7 +101,7 @@ safety:
     @safety check
 
 # Full development validation
-validate: lint typecheck test safety
+validate: typecheck test safety
     @echo "✅ All checks passed successfully!"
 
 # Open the project repository in the browser

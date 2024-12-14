@@ -11,7 +11,9 @@ import pipeline.config as config
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def test_configuration() -> None:
@@ -44,7 +46,9 @@ def test_configuration() -> None:
 
     for name, value, valid_options in env_checks:
         if valid_options and value not in valid_options:
-            logger.warning(f"   ⚠️ {name}: {value} is not in expected options {valid_options}")
+            logger.warning(
+                f"   ⚠️ {name}: {value} is not in expected options {valid_options}"
+            )
         else:
             logger.info(f"   ✅ {name}: {value}")
 
