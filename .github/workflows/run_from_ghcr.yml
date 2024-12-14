@@ -1,9 +1,6 @@
 name: Build and Test Container on Push
 
-on:
-  push:
-    branches:
-      - '*'
+on: push
 
 jobs:
   build-and-test-container:
