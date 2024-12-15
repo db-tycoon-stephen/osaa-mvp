@@ -19,11 +19,13 @@ jobs:
       id: run-container
       env:
         TARGET: ${{ secrets.TARGET || 'dev' }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       run: |
         docker run --name osaa-mvp-test \
           -e TARGET=$TARGET \
           -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
           osaa-mvp transform_dry_run
       continue-on-error: true
 
