@@ -17,9 +17,11 @@ jobs:
 
     - name: Run Container with Dry Run
       id: run-container
+      env:
+        TARGET: ${{ secrets.TARGET || 'dev' }}
       run: |
         docker run --name osaa-mvp-test \
-          -e TARGET=${{ secrets.TARGET }} \
+          -e TARGET=$TARGET \
           -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           osaa-mvp transform_dry_run
