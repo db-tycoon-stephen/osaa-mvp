@@ -23,6 +23,7 @@ jobs:
       - name: Run Docker Transform Command
         run: |
           docker run --rm \
+            -e TARGET=Prod \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             ghcr.io/${{ github.repository }}:latest \
