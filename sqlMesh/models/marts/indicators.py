@@ -1,7 +1,7 @@
 import ibis 
-from ibis.expr.operations import Namespace, UnboundTable
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
+from macros.ibis_expressions import generate_ibis_table
 
 
 @model(
@@ -21,7 +21,7 @@ from sqlmesh.core.model import model
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
 
-    schema = {
+    column_schema = {
         "indicator_id": "String", 
         "country_id": "String", 
         "year": "Int64", 
@@ -31,17 +31,19 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         "indicator_description": "String", 
     }
 
-    int_sdg = UnboundTable(
-        name="sdg",
-        schema=schema,
-        namespace=Namespace(database="intermediate")
-    ).to_expr()
+    int_sdg = generate_ibis_table(
+        evaluator,
+        table_name="sdg", 
+        column_schema=column_schema, 
+        schema_name="intermediate"
+    )
 
-    int_opri = UnboundTable(
-        name="opri",
-        schema=schema,
-        namespace=Namespace(database="intermediate")
-    ).to_expr()
+    int_opri = generate_ibis_table(
+        evaluator,
+        table_name="opri", 
+        column_schema=column_schema, 
+        schema_name="intermediate"
+    )
    
     unioned_t = (
         ibis
@@ -54,6 +56,6 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
             'country_id',
             'indicator_id'
         ])
-    ) 
+    )
 
     return ibis.to_sql(unioned_t)
