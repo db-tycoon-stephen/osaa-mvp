@@ -3,25 +3,7 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
 
-
-@model(
-    "marts.indicators",
-    is_sql=True,
-    kind="FULL",
-    columns={
-        "indicator_id": "TEXT", 
-        "country_id": "TEXT", 
-        "year": "INT", 
-        "value": "DECIMAL(18, 3)", 
-        "magnitude": "TEXT", 
-        "qualifier": "TEXT",
-        "indicator_description": "TEXT", 
-        "source": "TEXT"
-    }
-)
-def entrypoint(evaluator: MacroEvaluator) -> str:
-
-    column_schema = {
+column_schema = {
         "indicator_id": "String", 
         "country_id": "String", 
         "year": "Int64", 
@@ -29,7 +11,15 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         "magnitude": "String", 
         "qualifier": "String",
         "indicator_description": "String", 
-    }
+}
+
+@model(
+    "marts.indicators",
+    is_sql=True,
+    kind="FULL",
+    columns=column_schema
+)
+def entrypoint(evaluator: MacroEvaluator) -> str:
 
     int_sdg = generate_ibis_table(
         evaluator,
