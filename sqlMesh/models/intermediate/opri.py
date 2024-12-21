@@ -6,7 +6,7 @@ from macros.ibis_expressions import generate_ibis_table
 
 
 @model(
-    "intermediate.opri_test",
+    "intermediate.opri",
     is_sql=True,
     kind="FULL",
     columns={
