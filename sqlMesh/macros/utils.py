@@ -44,12 +44,13 @@ def get_sql_model_schema(sql_file_name, folder_path_from_models_folder):
     columns_section = match.group(1)
 
     # Regular expression to extract column name and type
-    column_pattern = re.compile(r"(\w+)\s+(\w+)", re.IGNORECASE)
+    # This pattern now accounts for column names with spaces, assuming they are quoted
+    column_pattern = re.compile(r'"?([\w\s]+)"?\s+(\w+)', re.IGNORECASE)
     columns = column_pattern.findall(columns_section)
 
     # Convert list of tuples to dictionary
     columns_dict = {
-        name.lower(): convert_duckdb_type_to_ibis(str(col_type))
+        name.strip().lower(): convert_duckdb_type_to_ibis(str(col_type))
         for name, col_type in columns
     }
 
