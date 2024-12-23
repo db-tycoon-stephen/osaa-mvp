@@ -1,0 +1,93 @@
+from sqlmesh import macro
+import re
+from constants import SQLMESH_DIR
+
+
+def convert_duckdb_type_to_ibis(duckdb_type):
+    # Convert to string and uppercase for consistency
+    type_str = str(duckdb_type).upper()
+
+    # Extract base type by removing anything after '(' if it exists
+    # Handling dtype such as DECIMAL(18,3)
+    base_type = type_str.split("(")[0].strip()
+
+    type_mapping = {
+        "TEXT": "String",
+        "VARCHAR": "String",
+        "CHAR": "String",
+        "INT": "Int",
+        "INTEGER": "Int",
+        "BIGINT": "Int",
+        "DECIMAL": "Decimal",
+        "NUMERIC": "Decimal",
+    }
+    return type_mapping.get(base_type, "String")  # Default to String if unknown
+
+
+@macro()
+def get_sql_model_schema(sql_file_name, folder_path_from_models_folder):
+    file_path = (
+        f"{SQLMESH_DIR}/models/{folder_path_from_models_folder}/{sql_file_name}.sql"
+    )
+    with open(file_path, "r") as file:
+        sql_content = file.read()
+
+    # Regular expression to match the MODEL section
+    model_pattern = re.compile(
+        r"MODEL\s*\([\s\S]*?columns\s*\(\s*([\s\S]*?)\s*\)[\s\S]*?\)", re.IGNORECASE
+    )
+    match = model_pattern.search(sql_content)
+
+    if not match:
+        return {}
+
+    columns_section = match.group(1)
+
+    # Regular expression to extract column name and type
+    column_pattern = re.compile(r"(\w+)\s+(\w+)", re.IGNORECASE)
+    columns = column_pattern.findall(columns_section)
+
+    # Convert list of tuples to dictionary
+    columns_dict = {
+        name.lower(): convert_duckdb_type_to_ibis(str(col_type))
+        for name, col_type in columns
+    }
+
+    return columns_dict
+
+
+# @macro()
+# def create_duckdb_con_with_s3():
+#     # from constants import DB_PATH
+
+#     try:
+#         con = duckdb.connect()
+#         con.execute("INSTALL httpfs")
+#         con.execute("LOAD httpfs")
+
+#         # Set up S3 credentials and configurations
+#         # con.execute(f"""
+#         # SET s3_access_key_id='{os.getenv("AWS_ACCESS_KEY_ID")}';
+#         # SET s3_secret_access_key='{os.getenv("AWS_SECRET_ACCESS_KEY")}';
+#         # SET s3_region='{os.getenv("AWS_SECRET_ACCESS_KEY")}';
+#         # """)
+#         con.execute(
+#             f"""
+#             CREATE SECRET IF NOT EXISTS my_s3_secret (
+#                     TYPE S3,
+#                     KEY_ID '{os.getenv("AWS_ACCESS_KEY_ID")}',
+#                     SECRET '{os.getenv("AWS_SECRET_ACCESS_KEY")}',
+#                     REGION '{os.getenv("AWS_SECRET_ACCESS_KEY")}'
+#                 );
+#             """
+#         )
+
+#     except Exception as e:
+#         print(f"Error establishing DuckDB connection: {e}")
+#         raise
+
+#     return con
+
+
+# def hellow():
+#     print("hellow")

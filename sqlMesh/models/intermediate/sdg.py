@@ -3,21 +3,24 @@ import ibis.selectors as s
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
+from macros.utils import get_sql_model_schema
+
+column_schema = {
+    "indicator_id": "String",
+    "country_id": "String",
+    "year": "Int",
+    "value": "Decimal",
+    "magnitude": "String",
+    "qualifier": "String",
+    "indicator_description": "String",
+}
 
 
 @model(
     "intermediate.sdg",
     is_sql=True,
     kind="FULL",
-    columns={
-        "indicator_id": "String",
-        "country_id": "String",
-        "year": "Int",
-        "value": "Decimal",
-        "magnitude": "String",
-        "qualifier": "String",
-        "indicator_description": "String",
-    },
+    columns=column_schema,
     description="""
     This model contains Sustainable Development Goals (SDG) data for all countries and indicators.
     Publishing Org: UN
@@ -39,27 +42,22 @@ from macros.ibis_expressions import generate_ibis_table
         qualifier: The qualifier of the indicator for the country and year
         indicator_description: The description of the indicator
     Primary Key: indicator_id, country_id, year
-    """
+    """,
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
+    source_folder_path = "sources/sdg"
+
     opri_data_national = generate_ibis_table(
         evaluator,
         table_name="data_national",
-        column_schema={
-            "indicator_id": "String",
-            "country_id": "String",
-            "year": "Int",
-            "value": "Decimal",
-            "magnitude": "String",
-            "qualifier": "String",
-        },
+        column_schema=get_sql_model_schema("data_national", source_folder_path),
         schema_name="sdg",
     )
 
     opri_label = generate_ibis_table(
         evaluator,
         table_name="label",
-        column_schema={"indicator_id": "String", "indicator_label_en": "String"},
+        column_schema=get_sql_model_schema("label", source_folder_path),
         schema_name="sdg",
     )
 
