@@ -1,6 +1,7 @@
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh import model
 import ibis
+import os
 from macros.ibis_expressions import generate_ibis_table
 from macros.s3_paths import s3_transformed_path
 from models.intermediate.wdi import column_schema as wdi_column_schema
@@ -14,20 +15,27 @@ column_schema = {
     "avg_value_by_country": "Float",
 }
 
+# For post statement
+schema_to_copy_from = (
+    "" if os.getenv("TARGET") == "prod" else f"__{os.getenv('TARGET')}"
+)
+
 
 @model(
     "intermediate.wdi_country_averages_test",
     is_sql=True,
     kind="FULL",
     columns=column_schema,
-    # post_statements=[f"""
-    #     @IF(
-    #         @runtime_stage = 'evaluating',
-    #             COPY (SELECT * FROM intermediate.wdi_country_averages)
-    #             TO @s3_transformed_path('osaa_mvp.intermediate.wdi_country_averages')
-    #             (FORMAT PARQUET)
-    #     );
-    # """],
+    post_statements=[
+        f"""
+        @IF(
+            @runtime_stage = 'evaluating',
+                COPY (SELECT * FROM intermediate{schema_to_copy_from}.wdi_country_averages)
+                TO {s3_transformed_path(MacroEvaluator, 'osaa_mvp.intermediate.wdi_country_averages')}
+                (FORMAT PARQUET)
+        );
+    """
+    ],
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     int_wdi = generate_ibis_table(
