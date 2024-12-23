@@ -29,7 +29,7 @@ schema_to_copy_from = (
     post_statements=[
         f"""
         @IF(
-            @runtime_stage = 'evaluating',
+            @runtime_stage = 'testing',
                 COPY (SELECT * FROM intermediate{schema_to_copy_from}.wdi_country_averages)
                 TO {s3_transformed_path(MacroEvaluator, 'osaa_mvp.intermediate.wdi_country_averages')}
                 (FORMAT PARQUET)
