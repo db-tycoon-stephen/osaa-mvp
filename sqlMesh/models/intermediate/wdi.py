@@ -7,11 +7,11 @@ from macros.utils import get_sql_model_schema
 
 
 column_schema = {
-    "country_id": "text",
-    "indicator_id": "text",
+    "country_id": "String",
+    "indicator_id": "String",
     "year": "Int",
-    "value": "text",
-    "indicator_label": "text",
+    "value": "String",
+    "indicator_label": "String",
 }
 
 
