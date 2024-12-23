@@ -24,7 +24,7 @@ case "$1" in
     ;;
   "ui")
     cd sqlMesh
-    sqlmesh ui --port "${UI_PORT:-8000}"
+    sqlmesh ui --port "${UI_PORT:-8080}"
     ;;
   "upload")
     python -m pipeline.upload.run
