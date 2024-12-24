@@ -6,7 +6,7 @@ from macros.ibis_expressions import generate_ibis_table
 from macros.utils import get_sql_model_schema
 
 
-column_schema = {
+COLUMN_SCHEMA = {
     "country_id": "String",
     "indicator_id": "String",
     "year": "Int",
@@ -19,7 +19,7 @@ column_schema = {
     "intermediate.wdi",
     is_sql=True,
     kind="FULL",
-    columns=column_schema,
+    columns=COLUMN_SCHEMA,
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     """Process WDI data and return the transformed Ibis table."""

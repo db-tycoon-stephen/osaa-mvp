@@ -4,7 +4,7 @@ from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
 from macros.utils import get_sql_model_schema
 
-column_schema = {
+COLUMN_SCHEMA = {
     "indicator_id": "String",
     "country_id": "String",
     "year": "Int",
@@ -19,7 +19,7 @@ column_schema = {
     "intermediate.sdg",
     is_sql=True,
     kind="FULL",
-    columns=column_schema,
+    columns=COLUMN_SCHEMA,
     description="""
     This model contains Sustainable Development Goals (SDG) data for all countries and indicators.
     Publishing Org: UN
