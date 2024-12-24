@@ -1,5 +1,4 @@
 import ibis
-import ibis.selectors as s
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
