@@ -16,8 +16,10 @@ def generate_ibis_table(
     """
     try:
         if not table_name or not schema_name or not column_schema:
-            raise ValueError("table_name, schema_name, and column_schema are required parameters")
-            
+            raise ValueError(
+                "table_name, schema_name, and column_schema are required parameters"
+            )
+
         table = UnboundTable(
             name=table_name,
             schema=column_schema,
