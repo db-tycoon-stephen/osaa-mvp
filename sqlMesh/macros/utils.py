@@ -25,7 +25,7 @@ def convert_duckdb_type_to_ibis(duckdb_type):
 
 
 @macro()
-def get_sql_model_schema(sql_file_name, folder_path_from_models_folder):
+def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folder):
     file_path = (
         f"{SQLMESH_DIR}/models/{folder_path_from_models_folder}/{sql_file_name}.sql"
     )

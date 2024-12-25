@@ -22,14 +22,14 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     opri_data_national = generate_ibis_table(
         evaluator,
         table_name="data_national",
-        column_schema=get_sql_model_schema("data_national", source_folder_path),
+        column_schema=get_sql_model_schema(evaluator, "data_national", source_folder_path),
         schema_name="opri",
     )
 
     opri_label = generate_ibis_table(
         evaluator,
         table_name="label",
-        column_schema=get_sql_model_schema("label", source_folder_path),
+        column_schema=get_sql_model_schema(evaluator, "label", source_folder_path),
         schema_name="opri",
     )
 

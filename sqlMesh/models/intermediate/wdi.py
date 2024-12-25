@@ -28,7 +28,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     wdi_csv = generate_ibis_table(
         evaluator,
         table_name="csv",
-        column_schema=get_sql_model_schema("csv", source_folder_path),
+        column_schema=get_sql_model_schema(evaluator, "csv", source_folder_path),
         schema_name="wdi",
     )
 
@@ -43,7 +43,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     wdi_series = generate_ibis_table(
         evaluator,
         table_name="series",
-        column_schema=get_sql_model_schema("series", source_folder_path),
+        column_schema=get_sql_model_schema(evaluator, "series", source_folder_path),
         schema_name="wdi",
     )
 
