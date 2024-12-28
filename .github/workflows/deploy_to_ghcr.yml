@@ -1,4 +1,4 @@
-name: Build, Test, and Deploy Container on PR Merge
+name: Build, QA, and Deploy Container when PRs to main are Merged
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  build-test-and-deploy:
+  build-qa-and-deploy:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
@@ -34,22 +34,58 @@ jobs:
     - name: Build Docker Container
       run: docker build -t osaa-mvp .
 
-    - name: Run Container with Dry Run
+    - name: Run QA Process Through the Container
       id: run-container
+      env:
+        TARGET: ${{ secrets.TARGET || 'qa' }}
+        GATEWAY: ${{ secrets.GATEWAY || 'shared_state' }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+        POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE || 'postgres' }}
+        USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
+        POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
       run: |
-        docker run --name osaa-mvp-test -e TARGET=int osaa-mvp transform_dry_run
+        docker run --name osaa-mvp \
+          -e TARGET=$TARGET \
+          -e GATEWAY=$GATEWAY \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+          -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
+          -e USERNAME=$USERNAME \
+          -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+          -e POSTGRES_PORT=$POSTGRES_PORT \
+          -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
+          osaa-mvp transform
       continue-on-error: true
 
     - name: Check Container Logs
-      run: docker logs osaa-mvp-test
+      run: docker logs osaa-mvp
 
     - name: Check Container Status
       run: |
-        container_status=$(docker inspect --format='{{.State.Status}}' osaa-mvp-test)
-        if [ "$container_status" != "exited" ] || [ "$(docker inspect --format='{{.State.ExitCode}}' osaa-mvp-test)" != "0" ]; then
-          echo "Container failed to run correctly"
+        container_status=$(docker inspect --format='{{.State.Status}}' osaa-mvp)
+        exit_code=$(docker inspect --format='{{.State.ExitCode}}' osaa-mvp)
+        error_log=$(docker logs osaa-mvp 2>&1)
+        
+        echo "Container Status: $container_status"
+        echo "Exit Code: $exit_code"
+        
+        if [ "$container_status" != "exited" ]; then
+          echo "Error: Container did not complete execution"
+          echo "$error_log"
           exit 1
         fi
+        
+        if [ "$exit_code" -ne 0 ]; then
+          echo "Error: Container exited with non-zero status code"
+          echo "$error_log"
+          exit 1
+        fi
+        
+        echo "Container ran successfully"
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
@@ -79,5 +115,5 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        docker stop osaa-mvp-test || true
-        docker rm osaa-mvp-test || true
+        docker stop osaa-mvp || true
+        docker rm osaa-mvp || true
