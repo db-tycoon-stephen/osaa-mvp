@@ -20,7 +20,7 @@ jobs:
       env:
         TARGET: ${{ secrets.TARGET || 'dev' }}
         GATEWAY: ${{ secrets.GATEWAY || 'shared_state' }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       run: |
         docker run --name osaa-mvp \
           -e TARGET=$TARGET \
