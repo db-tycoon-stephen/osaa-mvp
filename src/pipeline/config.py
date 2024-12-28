@@ -40,7 +40,7 @@ ENABLE_S3_UPLOAD = os.getenv("ENABLE_S3_UPLOAD", "true").lower() == "true"
 # S3 configurations with environment-based paths
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "osaa-mvp")
 LANDING_AREA_FOLDER = f"{S3_ENV}/landing"
-TRANSFORMED_AREA_FOLDER = f"{S3_ENV}/transformed"
+TRANSFORMED_AREA_FOLDER = f"{S3_ENV}/analytics"
 STAGING_AREA_PATH = f"{S3_ENV}/staging"
 
 
