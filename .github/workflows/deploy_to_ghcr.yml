@@ -58,7 +58,7 @@ jobs:
           -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
           -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
           -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
-          osaa-mvp transform
+          osaa-mvp etl
       continue-on-error: true
 
     - name: Check Container Logs
