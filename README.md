@@ -8,50 +8,18 @@
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
+- [CI/CD Workflows](#ci-cd-workflows)
 
 ## Purpose
 
 This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging modern data engineering tools to create an efficient and scalable data processing system.
 
 ### Key Technologies
-- **Ibis**: Provides a unified interface for data manipulation
+- **SQLMesh**: Data management tool for SQL-based data transformations
+- **Ibis**: Python-based transformation framework
 - **DuckDB**: In-memory analytical database for fast data processing
 - **Parquet**: Columnar storage format for efficient data storage
 - **S3**: Cloud storage for data lake architecture
-
-## How It Works
-
-### Pipeline Process
-The data pipeline consists of three main stages:
-
-#### Ingestion Process (`ingest/run.py`)
-- Reads raw CSV files from `data/raw/<source>` directories
-- Converts them to Parquet format using DuckDB
-- Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
-- Creates folders for each data source:
-  - `edu`: Education-related datasets
-  - `wdi`: World Development Indicators
-
-#### Transformation Process (SQLMesh)
-- Reads Parquet files from the S3 landing zone
-- Performs data transformations using SQLMesh models
-- Stores transformed data in local DuckDB database (`osaa_mvp.db`)
-- Outputs transformed data to S3 under `<env>/transformed/<schema>/` folders
-
-#### Upload Process (`upload/run.py`)
-- Takes transformed data from the DuckDB database
-- Uploads final transformed datasets to S3 under `<env>/transformed/` directory
-- Currently focuses on uploading WDI (World Development Indicators) transformed data
-
-### Environment Configuration
-The pipeline supports different execution environments controlled through environment variables:
-- `TARGET`: Controls S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
-- `USERNAME`: Used for S3 paths in `dev` environment. Default is `default`
-
-S3 path examples:
-- Production: `prod/`
-- Integration: `int/`
-- Development: `dev_<username>/`
 
 ## Getting Started
 
@@ -92,13 +60,11 @@ S3 path examples:
    USERNAME=<your-name>
 
    # SQLMesh Configuration
-   # Postgres for the shared state db
    POSTGRES_HOST=your_host
    POSTGRES_PORT=your_port
    POSTGRES_USER=your_user
    POSTGRES_PASSWORD=your_pass
    POSTGRES_DATABASE=your_database
-   # Specify Gateway
    GATEWAY=your_gateway
    ```
 
@@ -234,10 +200,42 @@ just upload    # Run the upload process
 just etl       # Run the complete pipeline (ingest → transform → upload)
 ```
 
-
 ## System Architecture
 The system architecture diagram can be found in [system_architecture.md](system_architecture.md)
 
+## How It Works
+
+### Pipeline Process
+The data pipeline consists of three main stages:
+
+#### Ingestion Process (`ingest/run.py`)
+- Reads raw CSV files from `data/raw/<source>` directories
+- Converts them to Parquet format using DuckDB
+- Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
+- Creates folders for each data source:
+  - `edu`: Education-related datasets
+  - `wdi`: World Development Indicators
+
+#### Transformation Process (SQLMesh)
+- Reads Parquet files from the S3 landing zone
+- Performs data transformations using SQLMesh models
+- Stores transformed data in local DuckDB database (`osaa_mvp.db`)
+- Outputs transformed data to S3 under `<env>/transformed/<schema>/` folders
+
+#### Upload Process (`upload/run.py`)
+- Takes transformed data from the DuckDB database
+- Uploads final transformed datasets to S3 under `<env>/transformed/` directory
+- Currently focuses on uploading WDI (World Development Indicators) transformed data
+
+### Environment Configuration
+The pipeline supports different execution environments controlled through environment variables:
+- `TARGET`: Controls S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
+- `USERNAME`: Used for S3 paths in `dev` environment. Default is `default`
+
+S3 path examples:
+- Production: `prod/`
+- Integration: `int/`
+- Development: `dev_<username>/`
 
 ## Key Technologies
 
@@ -312,7 +310,28 @@ s3://osaa-mvp/                           # Base bucket
     └── staging/
 ```
 
+## CI/CD Workflows
 
+The project uses GitHub Actions for continuous integration and deployment:
+
+### Deploy to GHCR (`deploy_to_ghcr.yml`)
+Triggered when PRs are merged to main:
+- Builds the container
+- Runs QA process
+- Pushes container to GitHub Container Registry
+
+### Run from GHCR (`run_from_ghcr.yml`)
+Triggered on every push:
+- Builds the container
+- Runs transform process
+- Validates container execution
+
+## Security Notes
+
+- Never commit `.env` files containing sensitive credentials
+- Store all sensitive information as GitHub Secrets for CI/CD
+- Rotate AWS credentials regularly
+- Use least-privilege access principles for all credentials
 
 ## Next Steps
 
