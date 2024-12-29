@@ -24,7 +24,7 @@ jobs:
         env:
           TARGET: Prod
           GATEWAY: shared_state
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
         run: |
           docker run --rm \
             -e TARGET=$TARGET \
