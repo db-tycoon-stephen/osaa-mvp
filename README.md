@@ -25,17 +25,20 @@ This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the
 - **S3**: Cloud storage for data lake architecture, hosted on AWS
 
 ## Getting Started
+This project consists of both local and cloud components. Start by downloading the code onto your local machine and run it using the commands below. 
+The process will utilize your computer's hardware to run the data pipeline. However, the outputs of the pipeline will be stored in the cloud, on the S3 bucket. Additionally, the pipeline will use a Postgres database hosted on AWS RDS to store the job state for each of the data transformations.
 
-### User Profiles
-1. **Data Analyst/Policy Analyst** - You are a user of the data, and you need to run the data pipeline in your own development environment.
-2. **Data Engineer** - You are a project maintainer and you need to make edits to the pipeline process. You will interact directly with the code and cli tools, in addition to the compiling and running the container.
+### Prerequisites
+To run this project, you must have access to the services listed above. Please see the links below for more information about each:
+- Docker Desktop: [Docker Desktop](https://docs.docker.com/get-docker/)
+- Git Command Line Interface (CLI): [Git CLI](https://git-scm.com/downloads)
 
-#### Prerequisites
-- Python 3.9-3.11 (3.12 not supported)
-- AWS account with S3 access
-- Just (command runner) - for running predefined commands
-- Docker Desktop (optional) - for running the pipeline in a containerized environment
-- Git cli
+You will also need credentials for the following services. 
+Note: Access for these will be provided by the project sponsor. Reach out if you need access.
+
+- AWS S3 Bucket: [AWS S3](https://aws.amazon.com/s3/)
+- AWS RDS Postgres Database: [AWS RDS](https://aws.amazon.com/rds/)
+
 
 #### Setup
 1. Clone the repository:
@@ -87,6 +90,10 @@ See the steps below to build and run the container
    ```
    docker build -t osaa-mvp .
    ```
+
+### User Profiles
+1. **Data Analyst/Policy Analyst** - You are a user of the data, and you need to run the data pipeline in your own development environment.
+2. **Data Engineer** - You are a project maintainer and you need to make edits to the pipeline process. You will interact directly with the code and cli tools, in addition to the compiling and running the container.
 
 ### Environment Configuration
 The pipeline supports different execution environments controlled through environment variables.
