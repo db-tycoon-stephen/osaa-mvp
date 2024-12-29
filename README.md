@@ -1,268 +1,144 @@
 # OSAA Data Pipeline MVP
 
-## Table of Contents
-- [Purpose](#purpose)
-- [Getting Started](#getting-started)
-- [Project File Structure](#project-file-structure)
-- [How It Works](#how-it-works)
-- [Key Technologies](#key-technologies)
-- [CI/CD Workflows](#ci-cd-workflows)
-- [Security Notes](#security-notes)
-- [Next Steps](#next-steps)
-- [License](#license)
-- [Contact](#contact)
-- [Acknowledgement](#acknowledgement)
-
-## Purpose
+## 1. Purpose
 
 This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging modern data engineering tools to create an efficient and scalable data processing system.
 
-### Key Technologies
-- **SQLMesh**: Data management tool for SQL-based data transformations
-- **Ibis**: Python-based transformation framework, to be used for SQLMesh models
-- **DuckDB**: In-memory analytical database for fast in-memory data processing
-- **Parquet**: Columnar storage format for efficient data storage
-- **S3**: Cloud storage for data lake architecture, hosted on AWS
+## 2. Getting Started
 
-## Getting Started
-This project consists of both local and cloud components. Start by downloading the code onto your local machine and run it using the commands below. 
-The process will utilize your computer's hardware to run the data pipeline. However, the outputs of the pipeline will be stored in the cloud, on the S3 bucket. Additionally, the pipeline will use a Postgres database hosted on AWS RDS to store the job state for each of the data transformations.
+This data pipeline operates locally on your computer while storing its results in the cloud (AWS). The process runs inside a Docker container but maintains all data outputs in AWS S3 cloud storage and uses AWS RDS PostgreSQL databases for state management. The pipeline uses DuckDB for efficient in-memory data processing and SQLMesh for managing SQL-based data transformations.
 
-### Prerequisites
-To run this project, you must have access to the services listed above. Please see the links below for more information about each:
-- Docker Desktop: [Docker Desktop](https://docs.docker.com/get-docker/)
-- Git Command Line Interface (CLI): [Git CLI](https://git-scm.com/downloads)
+This ReadMe will show you how to:
+- Download the project code and run it locally with Docker
+- Run the pipeline in different modes and environments
+- Access the data lake and data warehouse
 
-You will also need credentials for the following services. 
-Note: Access for these will be provided by the project sponsor. Reach out if you need access.
+### 2.1 Key Technologies
+- **[Docker](https://www.docker.com/)**: Containerization platform that ensures consistent execution across different computers
+- **[SQLMesh](https://sqlmesh.com/)**: Data management tool for SQL-based data transformations
+- **[Ibis](https://ibis-project.org/)**: Python-based transformation framework, to be used for SQLMesh models
+- **[DuckDB](https://duckdb.org/)**: In-memory analytical database for fast in-memory data processing
+- **[Parquet](https://parquet.apache.org/)**: Columnar storage format for efficient data storage
+- **[AWS S3](https://aws.amazon.com/s3/)**: Cloud storage for data lake architecture, hosted on AWS
+- **[GitHub](https://github.com/)**: Version control and code collaboration platform
+- **[GitHub Actions](https://github.com/features/actions)**: Automated workflow and CI/CD platform integrated with GitHub
 
-- AWS S3 Bucket: [AWS S3](https://aws.amazon.com/s3/)
-- AWS RDS Postgres Database: [AWS RDS](https://aws.amazon.com/rds/)
+### 2.2 Prerequisites
 
+#### A. Required Software
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/): Application containerization platform that packages the pipeline and all its dependencies into a single, runnable unit. Available for Windows, Mac, and Linux.
+- [Git](https://git-scm.com/downloads): Version control system that lets you download and track changes to the project code. Choose the version for your operating system (Windows, Mac, or Linux).
 
-#### Setup
-1. Clone the repository:
+**Setting up Git:**
+> *Windows:*
+> 1. Download Git from [git-scm.com](https://git-scm.com/downloads)
+> 2. Run the installer (Git-X.XX.X-64-bit.exe)
+> 3. Open Command Prompt or PowerShell and verify installation:
+>    ```bash
+>    git --version
+>    ```
+
+*Mac:*
+1. Open Terminal
+2. Install using Homebrew (recommended):
+   ```bash
+   brew install git
    ```
+3. Verify installation:
+   ```bash
+   git --version
+   ```
+
+*Linux (Ubuntu/Debian):*
+1. Open Terminal
+2. Update package list and install:
+   ```bash
+   sudo apt update
+   sudo apt install git
+   ```
+3. Verify installation:
+   ```bash
+   git --version
+   ```
+
+#### B. Required Cloud Access
+Your project sponsor will provide access credentials for:
+- AWS S3: Cloud storage for processed data
+- AWS RDS: Cloud database for pipeline state management
+
+Note: After installing Docker Desktop, you'll need to start the application before running any pipeline commands. Git installation will provide the `git` command in your terminal/command prompt.
+
+### 2.3 Basic Setup
+
+1. **Clone the Repository**
+   ```bash
    git clone https://github.com/UN-OSAA/osaa-mvp.git
    cd osaa-mvp
    ```
-2. Set up your environment variables:
+
+2. **Configure Access Credentials**
+   - Copy the example configuration file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Update `.env` with the credentials provided by your project sponsor
+
+3. **Execute the Pipeline**
+   Standard execution with default settings:
    ```bash
-   # Copy the example environment file
-   cp .env.example .env
+   docker compose up
    ```
-   Edit .env with your AWS credentials
 
-   Required variables:
+### Additional Runtime Options
+
+1. **Execute Individual Components**
    ```bash
-   # AWS Credentials
-   AWS_ACCESS_KEY_ID=<your-aws-access-key>
-   AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
-   AWS_DEFAULT_REGION=<your-aws-region>
+   # Run only the data ingestion
+   docker compose run --rm pipeline ingest
 
-   # S3 Configuration
-   S3_BUCKET_NAME=osaa-mvp
-   TARGET=dev
-   USERNAME=<your-name>
+   # Run only the transformation process
+   docker compose run --rm pipeline transform
 
-   # SQLMesh Configuration
-   POSTGRES_HOST=your_host
-   POSTGRES_PORT=your_port
-   POSTGRES_USER=your_user
-   POSTGRES_PASSWORD=your_pass
-   POSTGRES_DATABASE=your_database
-   GATEWAY=your_gateway
+   # Run only the upload process
+   docker compose run --rm pipeline upload
    ```
 
-   These credentials are used for:
-   - S3 access for data storage
-   - DuckDB S3 integration
-   - Local development and Docker execution
+2. **Environment-Specific Execution**
+   ```bash
+   # Development environment with custom username
+   docker compose run --rm -e TARGET=dev -e USERNAME=your_name pipeline etl
 
-#### Running the Pipeline
+   # Quality Assurance environment
+   docker compose run --rm -e TARGET=qa pipeline etl
 
-##### Invoke Using Docker
-The simplest method to run the pipeline commands is with Docker. Once built, users can use the container to run any of the "just" workflows configured with the project.
-
-See the steps below to build and run the container
-
-1. Build the Docker image:
-   ```
-   docker build -t osaa-mvp .
+   # Production environment
+   docker compose run --rm -e TARGET=prod pipeline etl
    ```
 
-### User Profiles
-1. **Data Analyst/Policy Analyst** - You are a user of the data, and you need to run the data pipeline in your own development environment.
-2. **Data Engineer** - You are a project maintainer and you need to make edits to the pipeline process. You will interact directly with the code and cli tools, in addition to the compiling and running the container.
+### Environment Modes
 
-### Environment Configuration
-The pipeline supports different execution environments controlled through environment variables.
-The main variables that control behavior are:
-- TARGET: Controls both S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
-- USERNAME: Used for S3 paths in `dev` environment. Default is `default`
-- GATEWAY: Used to specify whether to use a managed postgres database for SQLMesh's state connection. Possible values are `local` or `shared_state`. Default is `local`, which uses duckdb as the state connection.
+The pipeline supports three operational modes:
+- **Development** (`dev`): Individual workspace for testing and development
+- **Quality Assurance** (`qa`): Verification environment for testing changes
+- **Production** (`prod`): Production environment for official data processing
 
-####  Standard Execution
-Run the complete pipeline with default settings:
-```bash
-docker compose up
-```
-By default, the container will run the entire elt process `just elt`.
+By default, the pipeline operates in development mode, providing isolated workspace for each user.
 
-To run the SQLMesh UI:
-```bash
-docker compose --profile ui up ui
-```
-Note: The UI must be run using the profile flag as shown above.
+### Support Contact
 
-###### One-off Pipeline Components
-You can run specific parts of the pipeline:
-1. Run only the ingestion process:
-```bash
-docker compose run --rm pipeline ingest
-```
+For technical assistance or access requests, please contact:
+- Mirian Lima (Project Sponsor) - mirian.lima@un.org
+- Stephen Sciortino (Technical Lead) - stephen.sciortino@un.org
 
-2. Run only the transform process:
-```bash
-docker compose run --rm pipeline transform
-```
+## 3. Project File Structure
 
-3. Run only the upload process:
-```bash
-docker compose run --rm pipeline upload
-```
-
-###### Environment Variable Control at Runtime
-You can override environment variables when running specific commands without modifying your `.env` file. This is useful for:
-- Testing different environments
-- Running as different users
-- Temporary configuration changes
-
-1. Example: Run as a specific user in development:
-Uses `username` for S3 paths:
-```bash
-docker compose run --rm -e TARGET=dev -e USERNAME=johndoe pipeline etl
-```
-
-This creates S3 paths like: `s3://osaa-poc/dev_johndoe/landing/`
-
-2. Run as integration environment:
-Uses `int` for S3 paths:
-```bash
-docker compose run --rm -e TARGET=int pipeline etl
-```
-
-This creates S3 paths like: `s3://osaa-poc/int/landing/`
-
-3. Run as production environment:
-Uses `prod` for S3 paths:
-```bash
-docker compose run --rm -e TARGET=prod pipeline etl
-```
-
-This creates S3 paths like: `s3://osaa-poc/prod/landing/`
-
-4. Run using the shared postgres database as SQLMesh's state connection:
-```bash
-docker compose run --rm -e TARGET=dev -e USERNAME=johndoe -e GATEWAY=shared_state pipeline etl
-```
-
-If you specified your gateway in `.env` file to use a shared database for SQLMesh's state.
-
-##### Invoke Using cli tools and the `justfile`
-
-Alternatively, run the process by installing all the required libraries and invoking the `just` workflows.
-
-1. Check if `just` is installed:
-   ```
-   just --version
-   ```
-   If `just` is not installed, follow the instructions below to install it:
-
-   - On macOS, you can use Homebrew:
-     ```
-     brew install just
-     ```
-
-   - On Linux, you can use the package manager for your distribution. For example, on Ubuntu:
-     ```
-     sudo apt install just
-     ```
-
-   - On Windows, you can use Scoop:
-     ```
-     scoop install just
-     ```
-
-2. Install dependencies using `just`:
-   ```
-   just install
-   ```
-
-3. Run the desired process using the appropriate `just` command. You can see all commands by running `just --list`
-
-Common `just` commands:
-
-```bash
-just ingest    # Run the ingestion process
-just transform # Run the SQLMesh transformations
-just upload    # Run the upload process
-just etl       # Run the complete pipeline (ingest → transform → upload)
-```
-
-## System Architecture
-The system architecture diagram can be found in [system_architecture.md](system_architecture.md)
-
-## How It Works
-
-### Pipeline Process
-The data pipeline consists of three main stages:
-
-#### Ingestion Process (`ingest/run.py`)
-- Reads raw CSV files from `data/raw/<source>` directories
-- Converts them to Parquet format using DuckDB
-- Uploads the Parquet files to S3 under `<env>/landing/<source>/` folders
-- Creates folders for each data source:
-  - `edu`: Education-related datasets
-  - `wdi`: World Development Indicators
-
-#### Transformation Process (SQLMesh)
-- Reads Parquet files from the S3 landing zone
-- Performs data transformations using SQLMesh models
-- Stores transformed data in local DuckDB database (`osaa_mvp.db`)
-- Outputs transformed data to S3 under `<env>/transformed/<schema>/` folders
-
-#### Upload Process (`upload/run.py`)
-- Takes transformed data from the DuckDB database
-- Uploads final transformed datasets to S3 under `<env>/transformed/` directory
-- Currently focuses on uploading WDI (World Development Indicators) transformed data
-
-### Environment Configuration
-The pipeline supports different execution environments controlled through environment variables:
-- `TARGET`: Controls S3 paths and SQLMesh environments (`dev`, `int`, `prod`). Default is `dev`
-- `USERNAME`: Used for S3 paths in `dev` environment. Default is `default`
-
-S3 path examples:
-- Production: `prod/`
-- Integration: `int/`
-- Development: `dev_<username>/`
-
-## Key Technologies
-
-- **Ibis**: A Python framework for data analysis, used to write expressive and portable data transformations. It provides a high-level abstraction over SQL databases like DuckDB, allowing for cleaner, more Pythonic data manipulation.
-- **DuckDB**: A highly performant in-memory SQL engine for analytical queries, used for efficient data processing and querying, in order to process, convert, and interact with Parquet files and S3.
-- **Parquet**: A columnar storage file format, used for efficient data storage and retrieval. Used as the core format for storing processed data.
-- **SQLMesh**: A SQL-based data management tool, used to manage the SQLMesh models and transformations.
-- **S3**: Amazon Simple Storage Service, used as the cloud storage solution for the data lake, storing both raw (landing folder) and processed (staging folder) data.
-
-## Project File Structure
+### 3.1 Repository Overview
 The project repo consists of several key components:
-1. The sqlMesh project containing all the transformation
-2. Files necessary to build and run the code as a Docker container, including the dockerfile and docker-compose.yml
-3. Files necessary to run the code in local dev environments, such as the .env_example and requirements.txt files
+1. The SQLMesh project containing all transformations
+2. Docker container configuration files
+3. Local development environment files
 
-Please see details about each location below:
-
+### 3.2 Directory Structure
 ```
 osaa-mvp/
 ├── data/                      # Local representation of the datalake
@@ -289,10 +165,9 @@ osaa-mvp/
 └── requirements.txt          # Python package dependencies
 ```
 
-#### S3 Folder Structure
-
+### 3.3 Cloud Storage Structure
 ```
-s3://osaa-mvp/                           # Base bucket
+s3://osaa-mvp/                 # Base bucket
 │
 ├── dev_{username}/                      # For dev environment (e.g., johndoe/)
 │   ├── landing/                         # Raw data landing zone
@@ -324,39 +199,45 @@ s3://osaa-mvp/                           # Base bucket
 │   └── analytics/
 ```
 
-## CI/CD Workflows
+## 4. CI/CD Workflows
 
-The project uses GitHub Actions for continuous integration and deployment:
-
-### Deploy to GHCR (`deploy_to_ghcr.yml`)
+### 4.1 Deploy to GHCR
 Triggered when PRs are merged to main:
 - Builds the container
 - Runs QA process
 - Pushes container to GitHub Container Registry
 
-### Run from GHCR (`run_from_ghcr.yml`)
+### 4.2 Run from GHCR
 Triggered on every push:
 - Builds the container
 - Runs transform process
 - Validates container execution
 
-## Security Notes
-
+## 5. Security Notes
 - Never commit `.env` files containing sensitive credentials
 - Store all sensitive information as GitHub Secrets for CI/CD
 
-## Next Steps
+## 6. Next Steps
+The next phase will focus on visualization layers:
 
-The next phase of this project will focus on experimenting with different visualization layers to effectively present the processed data. This may include:
+### 6.1 Infrastructure Improvements
+- Include a Motherduck destination
+- Integrate Iceberg tables
+- Add Hamilton orchestration
+- Implement Open Lineage
 
-- Include a Motherduck destination in the etl pipeline
-- Integrate the use of:
-    - Iceberg tables for better cataloguing
-    - Hamilton for orchestration
-    - Open Lineage for data lineage
-- Integration with BI tools like Tableau or Power BI
-- Experimentation with code-based data app/report/dashboard development using Quarto, Evidence, Marimo and Observable Framework.
-- Exploration of data science notebooks for advanced analytics, like Marimo, Quarto, Hex and Deepnote.
+### 6.2 Visualization Tools
+- BI tool integration (Tableau, Power BI)
+- Code-based dashboards and reports:
+  - Quarto
+  - Evidence
+  - Marimo
+  - Observable Framework
+- Data science notebooks:
+  - Marimo
+  - Quarto
+  - Hex
+  - Deepnote
 
 ## License
 
