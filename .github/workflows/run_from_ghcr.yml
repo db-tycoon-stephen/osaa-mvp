@@ -33,7 +33,7 @@ jobs:
       env:
         TARGET: ${{ secrets.TARGET || 'dev' }}
         GATEWAY: ${{ secrets.GATEWAY || 'shared_state' }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
         POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE || 'postgres' }}
         USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
