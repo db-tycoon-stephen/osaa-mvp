@@ -2,13 +2,17 @@
 
 ## Table of Contents
 - [Purpose](#purpose)
-- [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
-- [Dependencies](#dependencies)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+- [Project File Structure](#project-file-structure)
+- [How It Works](#how-it-works)
+- [Key Technologies](#key-technologies)
 - [CI/CD Workflows](#ci-cd-workflows)
+- [Security Notes](#security-notes)
+- [Next Steps](#next-steps)
+- [License](#license)
+- [Contact](#contact)
+- [Acknowledgement](#acknowledgement)
+
 
 ## Purpose
 
