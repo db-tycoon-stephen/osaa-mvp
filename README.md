@@ -6,7 +6,7 @@ This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the
 
 ## 2. Getting Started
 
-This data pipeline operates locally on your computer while storing its results in the cloud (AWS). The process runs inside a Docker container but maintains all data outputs in AWS S3 cloud storage and uses AWS RDS PostgreSQL databases for state management. The pipeline uses DuckDB for efficient in-memory data processing and SQLMesh for managing SQL-based data transformations.
+This data pipeline operates locally on your computer while storing its results in the cloud (AWS). The process runs inside a Docker container but maintains all data outputs in AWS S3 cloud storage and uses AWS RDS PostgreSQL databases for state management. The pipeline processes data using two specialized tools: DuckDB for efficient data operations and SQLMesh for managing transformation commands.
 
 This ReadMe will show you how to:
 - Download the project code and run it locally with Docker
@@ -81,7 +81,45 @@ Note: After installing Docker Desktop, you'll need to start the application befo
      ```bash
      cp .env.example .env
      ```
-   - Update `.env` with the credentials provided by your project sponsor
+   - Update `.env` with the credentials provided by your project sponsor. Here's what each setting controls:
+
+   **AWS Configuration:**
+   ```bash
+   # Access credentials for AWS services
+   AWS_ACCESS_KEY_ID=<your-key>        # AWS authentication
+   AWS_SECRET_ACCESS_KEY=<your-secret>  # AWS authentication
+   AWS_DEFAULT_REGION=us-east-1         # AWS region where resources are located
+
+   # S3 bucket settings
+   S3_BUCKET_NAME=osaa-mvp             # Where the data pipeline stores its files
+   ```
+
+   **Pipeline Control:**
+   ```bash
+   # Controls which environment the pipeline runs in
+   TARGET=dev                          # Options: dev (testing), qa (verification), prod (production)
+   USERNAME=your_name                  # Used to create personal workspace in dev environment
+   ```
+
+   **Database Connection:**
+   ```bash
+   # PostgreSQL database for tracking data transformations
+   POSTGRES_HOST=<host>               # Database server address
+   POSTGRES_PORT=5432                 # Database connection port
+   POSTGRES_USER=<user>              # Database login username
+   POSTGRES_PASSWORD=<password>       # Database login password
+   POSTGRES_DATABASE=<database>       # Name of the database to use
+
+   # Pipeline state management
+   GATEWAY=shared_state              # Controls where transformation state is stored
+                                    # Options: shared_state (PostgreSQL), local (DuckDB)
+   ```
+
+   These credentials enable:
+   - Storing processed data in AWS S3
+   - Tracking data transformations in a shared database
+   - Creating isolated workspaces for development
+   - Managing different deployment environments
 
 3. **Execute the Pipeline**
    Standard execution with default settings:
@@ -89,34 +127,83 @@ Note: After installing Docker Desktop, you'll need to start the application befo
    docker compose up
    ```
 
-### Additional Runtime Options
+## 3. Running the Pipeline
 
-1. **Execute Individual Components**
+### 3.1 Basic Execution
+Standard execution with default settings:
+```bash
+docker compose up
+```
+
+### 3.2 Additional Runtime Options
+The pipeline commands are defined in our `justfile` and exposed through Docker Compose. Here are the available commands and their purposes:
+
+1. **Core Pipeline Commands**
    ```bash
-   # Run only the data ingestion
+   # Run the complete pipeline (equivalent to: ingest → transform → upload)
+   docker compose run --rm pipeline etl
+
+   # Run only the data ingestion (CSV → Parquet, then upload to S3)
    docker compose run --rm pipeline ingest
 
-   # Run only the transformation process
+   # Run only the transformation process (SQLMesh models)
    docker compose run --rm pipeline transform
 
-   # Run only the upload process
+   # Run only the upload process (transformed data → S3)
    docker compose run --rm pipeline upload
    ```
 
-2. **Environment-Specific Execution**
+2. **Development and Testing Commands**
    ```bash
-   # Development environment with custom username
-   docker compose run --rm -e TARGET=dev -e USERNAME=your_name pipeline etl
-
-   # Quality Assurance environment
-   docker compose run --rm -e TARGET=qa pipeline etl
-
-   # Production environment
-   docker compose run --rm -e TARGET=prod pipeline etl
+   # Run etl
+   docker compose run --rm pipeline etl
    ```
 
-### Environment Modes
+3. **Environment Control**
+   The pipeline defaults to development mode (`dev`), which is the recommended environment for most users. Only change this setting in specific situations:
+   ```bash
+   # Default development environment (recommended for most users)
+   docker compose run --rm pipeline etl
+   # or explicitly:
+   docker compose run --rm \
+     -e TARGET=dev \
+     -e USERNAME=your_name \
+     pipeline etl
 
+   # Quality Assurance environment (used by CI/CD pipelines)
+   # Only use when testing changes for production
+   docker compose run --rm \
+     -e TARGET=qa \
+     -e GATEWAY=shared_state \
+     pipeline etl
+
+   # Production environment (restricted access)
+   # Only use when authorized to process official data
+   docker compose run --rm \
+     -e TARGET=prod \
+     -e GATEWAY=shared_state \
+     pipeline etl
+   ```
+
+   Note: Stay in the development environment unless specifically instructed otherwise by the project team. This ensures data safety and provides an isolated workspace for your work.
+
+4. **Data Flow Examples**
+   ```bash
+   # Ingest new source data and transform it
+   docker compose run --rm pipeline ingest transform
+
+   # Transform and upload without new ingestion
+   docker compose run --rm pipeline transform upload
+   ```
+
+These commands come from:
+- `justfile`: Defines the core commands (`etl`, `ingest`, `transform`, etc.)
+- `docker-compose.yml`: Exposes the commands through the `pipeline` service
+- `entrypoint.sh`: Handles command execution inside the container
+
+The pipeline is modular - you can run any combination of steps in sequence by listing them as arguments to the pipeline service.
+
+### 3.3 Environment Modes
 The pipeline supports three operational modes:
 - **Development** (`dev`): Individual workspace for testing and development
 - **Quality Assurance** (`qa`): Verification environment for testing changes
@@ -124,21 +211,15 @@ The pipeline supports three operational modes:
 
 By default, the pipeline operates in development mode, providing isolated workspace for each user.
 
-### Support Contact
+## 4. Project File Structure
 
-For technical assistance or access requests, please contact:
-- Mirian Lima (Project Sponsor) - mirian.lima@un.org
-- Stephen Sciortino (Technical Lead) - stephen.sciortino@un.org
-
-## 3. Project File Structure
-
-### 3.1 Repository Overview
+### 4.1 Repository Overview
 The project repo consists of several key components:
 1. The SQLMesh project containing all transformations
 2. Docker container configuration files
 3. Local development environment files
 
-### 3.2 Directory Structure
+### 4.2 Directory Structure
 ```
 osaa-mvp/
 ├── data/                      # Local representation of the datalake
@@ -165,68 +246,103 @@ osaa-mvp/
 └── requirements.txt          # Python package dependencies
 ```
 
-### 3.3 Cloud Storage Structure
+### 4.3 Cloud Storage Structure
 ```
 s3://osaa-mvp/                 # Base bucket
 │
-├── dev_{username}/                      # For dev environment (e.g., johndoe/)
-│   ├── landing/                         # Raw data landing zone
-│   │   ├── edu/                         # Education data
-│   │   │   ├── SDG_LABEL.parquet
-│   │   │   ├── OPRI_DATA_NATIONAL.parquet
-│   │   │   ├── SDG_DATA_NATIONAL.parquet
-│   │   │   └── OPRI_LABEL.parquet
-│   │   └── wdi/                         # World Development Indicators
-│   │       ├── WDICSV.parquet
-│   │       └── WDISeries.parquet
-│   │
-│   ├── staging/                         # Staging area for processed Parquet |
-│   │   ├── master
-│   │   ├── reference
-│   │   ├── source
-│   │   └── product
-│   │
-│   └── analytics/                       # Transformed data
+├── dev_{username}/           # Development environment (e.g., dev_johndoe/)
+│   ├── landing/             # Landing zone for raw data
+│   │   ├── edu/            # Education datasets in Parquet format
+│   │   └── wdi/            # World Development Indicators in Parquet
+│   ├── staging/            # Intermediate processed data
+│   └── analytics/          # Final transformed data
 │
-├── qa/                                 # QA environment (CICD)
-│   ├── landing/
-│   ├── staging/
-│   └── analytics/
+├── qa/                      # QA environment
+│   ├── landing/            # QA landing zone
+│   ├── staging/            # QA staging area
+│   └── analytics/          # QA analytics data
 │
-└── prod/                               # Production environment
-│   ├── landing/
-│   ├── staging/
-│   └── analytics/
+└── prod/                    # Production environment
+    ├── landing/            # Production landing zone
+    ├── staging/            # Production staging area
+    └── analytics/          # Production analytics data
 ```
 
-## 4. CI/CD Workflows
+Each environment (dev, qa, prod) has its own landing zone under `<environment>/landing/`. For example:
+- Development: `s3://osaa-mvp/dev_username/landing/`
+- QA: `s3://osaa-mvp/qa/landing/`
+- Production: `s3://osaa-mvp/prod/landing/`
 
-### 4.1 Deploy to GHCR
+### 4.4 Source Code Structure
+
+The `src/pipeline` directory contains the Python code that powers the core pipeline commands. Here's how the code maps to the commands:
+
+```
+src/pipeline/
+├── ingest/                 # Handles 'ingest' command
+│   └── run.py             # Converts CSVs to Parquet and uploads to S3
+├── upload/                 # Handles 'upload' command
+│   └── run.py             # Uploads transformed data to S3
+├── catalog.py             # Manages data locations and paths
+├── config.py              # Handles environment variables and settings
+└── utils.py               # Shared utility functions
+```
+
+**Mapping Commands to Processes:**
+- `docker compose run --rm pipeline ingest`
+  - Runs the code in `ingest/run.py`
+  - Reads CSV files from `data/raw/`
+  - Converts them to Parquet format
+  - Uploads to the S3 landing zone
+
+- `docker compose run --rm pipeline transform`
+  - Uses SQLMesh models in `sqlMesh/models/`
+  - Reads data from S3 landing zone
+  - Applies transformations
+  - Stores results in DuckDB
+
+- `docker compose run --rm pipeline upload`
+  - Runs the code in `upload/run.py`
+  - Takes transformed data from DuckDB
+  - Uploads to S3 analytics zone
+
+- `docker compose run --rm pipeline etl`
+  - Runs all three commands in sequence: ingest → transform → upload
+
+## 5. CI/CD Workflows
+
+### 5.1 Deploy to GHCR
 Triggered when PRs are merged to main:
 - Builds the container
 - Runs QA process
 - Pushes container to GitHub Container Registry
 
-### 4.2 Run from GHCR
+### 5.2 Run from GHCR
 Triggered on every push:
 - Builds the container
 - Runs transform process
 - Validates container execution
 
-## 5. Security Notes
+### 5.3 Daily Transform
+Automated daily data processing:
+- Runs at scheduled times
+- Processes new data in production
+- Updates analytics outputs
+
+## 6. Security Notes
 - Never commit `.env` files containing sensitive credentials
 - Store all sensitive information as GitHub Secrets for CI/CD
 
-## 6. Next Steps
+## 7. Next Steps
 The next phase will focus on visualization layers:
 
-### 6.1 Infrastructure Improvements
+### 7.1 Infrastructure Improvements
 - Include a Motherduck destination
 - Integrate Iceberg tables
 - Add Hamilton orchestration
 - Implement Open Lineage
 
-### 6.2 Visualization Tools
+### 7.2 Visualization Tools
 - BI tool integration (Tableau, Power BI)
 - Code-based dashboards and reports:
   - Quarto
