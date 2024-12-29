@@ -13,17 +13,16 @@
 - [Contact](#contact)
 - [Acknowledgement](#acknowledgement)
 
-
 ## Purpose
 
 This project implements a **Minimum Viable Product** (MVP) Data Pipeline for the United Nations Office of the Special Adviser on Africa (OSAA), leveraging modern data engineering tools to create an efficient and scalable data processing system.
 
 ### Key Technologies
 - **SQLMesh**: Data management tool for SQL-based data transformations
-- **Ibis**: Python-based transformation framework
-- **DuckDB**: In-memory analytical database for fast data processing
+- **Ibis**: Python-based transformation framework, to be used for SQLMesh models
+- **DuckDB**: In-memory analytical database for fast in-memory data processing
 - **Parquet**: Columnar storage format for efficient data storage
-- **S3**: Cloud storage for data lake architecture
+- **S3**: Cloud storage for data lake architecture, hosted on AWS
 
 ## Getting Started
 
@@ -299,19 +298,23 @@ s3://osaa-mvp/                           # Base bucket
 │   │       ├── WDICSV.parquet
 │   │       └── WDISeries.parquet
 │   │
-│   ├── transformed/                     # Transformed data
-│   │   └── wdi/
-│   │       └── wdi_transformed.parquet
+│   ├── staging/                         # Staging area for processed Parquet |
+│   │   ├── master
+│   │   ├── reference
+│   │   ├── source
+│   │   └── product
+│   │
+│   └── analytics/                       # Transformed data
 │
-├── int/                                 # Integration environment (CICD)
+├── qa/                                 # QA environment (CICD)
 │   ├── landing/
-│   ├── transformed/
-│   └── staging/
+│   ├── staging/
+│   └── analytics/
 │
-└── prod/                                # Production environment
-    ├── landing/
-    ├── transformed/
-    └── staging/
+└── prod/                               # Production environment
+│   ├── landing/
+│   ├── staging/
+│   └── analytics/
 ```
 
 ## CI/CD Workflows
@@ -334,8 +337,6 @@ Triggered on every push:
 
 - Never commit `.env` files containing sensitive credentials
 - Store all sensitive information as GitHub Secrets for CI/CD
-- Rotate AWS credentials regularly
-- Use least-privilege access principles for all credentials
 
 ## Next Steps
 
