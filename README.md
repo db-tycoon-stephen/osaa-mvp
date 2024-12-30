@@ -129,13 +129,61 @@ Note: After installing Docker Desktop, you'll need to start the application befo
 
 ## 3. Running the Pipeline
 
-### 3.1 Basic Execution
-Standard execution with default settings:
+There are two primary ways to use this project:
+1. Running existing transformations in your development environment
+2. Adding new datasets and transformations to the project
+
+### 3.1 Running Existing Transformations
+
+#### Basic Execution
+For most users, you'll want to run the complete pipeline:
 ```bash
 docker compose up
 ```
+This will process all datasets through the entire pipeline.
 
-### 3.2 Additional Runtime Options
+#### Specific Commands
+You can also run individual parts of the pipeline:
+```bash
+# Run only data ingestion (CSV → Parquet)
+docker compose run --rm pipeline ingest
+
+# Run only transformations
+docker compose run --rm pipeline transform
+
+# Run only the final upload
+docker compose run --rm pipeline upload
+```
+
+
+### 3.2 Adding New Datasets
+
+To add a new dataset to the project:
+
+1. **Add Source Data**
+   ```bash
+   # Add your CSV file to the appropriate source directory
+   data/raw/<source_name>/your_data.csv
+   ```
+
+2. **Create SQLMesh Models**
+   ```
+   sqlMesh/models/
+   ├── landing/                # Define how to read your data
+   │   └── your_source/
+   │       └── data.sql
+   ├── staging/           # Add processing steps
+   │   └── your_process.py
+   └── analytics/                  # Create final analytics
+       └── your_analytics.py
+   ```
+
+3. **Test Your Changes**
+   ```bash
+   # Run just your new transformation
+   docker compose run --rm pipeline transform
+
+### 3.3 Additional Runtime Options
 The pipeline commands are defined in our `justfile` and exposed through Docker Compose. Here are the available commands and their purposes:
 
 1. **Core Pipeline Commands**
