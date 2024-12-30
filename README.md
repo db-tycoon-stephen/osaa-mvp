@@ -175,21 +175,33 @@ To add a new dataset to the project:
    ```
 
 2. **Create SQLMesh Models**
+   All datasets must be transformed into a vertical format and unioned into the final `models/marts/indicators.py` model. The required format is:
+   ```
+   country_id    indicator_id    year    value    indicator_label    database
+   ----------    ------------    ----    -----    ---------------    --------
+   AGO           EDU_001        2020    42.5     "Education..."     "edu"
+   AGO           EDU_002        2020    78.3     "Primary..."       "edu"
+   ```
+
+   Create your models in this structure:
    ```
    sqlMesh/models/
    ├── sources/                # Define how to read your data
    │   └── your_source/
-   │       └── data.sql
-   ├── intermediate/           # Add processing steps
-   │   └── your_process.py
-   └── marts/                  # Create final analytics
-       └── your_analytics.py
+   │       └── data.sql       # Raw data ingestion
+   ├── intermediate/          # Add processing steps
+   │   └── your_process.py    # Transform to vertical format
+   └── marts/                 # Final analytics
+       └── indicators.py      # All datasets union here
    ```
 
 3. **Test Your Changes**
    ```bash
    # Run just your new transformation
    docker compose run --rm pipeline transform
+   ```
+
+   Verify your data appears correctly in the final indicators model.
 
 ### 3.3 Additional Runtime Options
 The pipeline commands are defined in our `justfile` and exposed through Docker Compose. Here are the available commands and their purposes:
