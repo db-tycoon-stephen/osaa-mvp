@@ -121,11 +121,19 @@ Note: After installing Docker Desktop, you'll need to start the application befo
    - Creating isolated workspaces for development
    - Managing different deployment environments
 
-3. **Execute the Pipeline**
-   Standard execution with default settings:
+3. **Build and Execute the Pipeline**
+   First, build the Docker container to include any code changes:
    ```bash
-   docker compose up
+   docker build -t osaa-mvp .
    ```
+
+   Then run the complete pipeline:
+   ```bash
+   docker compose run --rm pipeline etl
+   ```
+
+   Note: Always rebuild the container when you make changes to the code
+
 
 ## 3. Running the Pipeline
 
@@ -138,9 +146,9 @@ There are two primary ways to use this project:
 #### Basic Execution
 For most users, you'll want to run the complete pipeline:
 ```bash
-docker compose up
+docker compose run --rm pipeline etl
 ```
-This will process all datasets through the entire pipeline.
+This will process all datasets through the entire pipeline (ingest → transform → upload).
 
 #### Specific Commands
 You can also run individual parts of the pipeline:
@@ -169,12 +177,12 @@ To add a new dataset to the project:
 2. **Create SQLMesh Models**
    ```
    sqlMesh/models/
-   ├── landing/                # Define how to read your data
+   ├── sources/                # Define how to read your data
    │   └── your_source/
    │       └── data.sql
-   ├── staging/           # Add processing steps
+   ├── intermediate/           # Add processing steps
    │   └── your_process.py
-   └── analytics/                  # Create final analytics
+   └── marts/                  # Create final analytics
        └── your_analytics.py
    ```
 
