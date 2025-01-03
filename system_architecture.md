@@ -70,7 +70,7 @@ end
         subgraph PB[prod/]
             direction LR
             PL3[landing/]
-            PT3[transformed/]
+            PT3[staging/]
         end
         subgraph IB[int/]
             direction LR
@@ -79,7 +79,7 @@ end
         subgraph DB[dev/]
             direction LR
             DL3[landing/]
-            DT3[transformed/]
+            DT3[staging/]
         end
     end
 

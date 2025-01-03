@@ -57,8 +57,7 @@ def test_configuration() -> None:
     s3_checks = [
         ("S3 Bucket Name", config.S3_BUCKET_NAME),
         ("Landing Area Folder", config.LANDING_AREA_FOLDER),
-        ("Transformed Area Folder", config.TRANSFORMED_AREA_FOLDER),
-        ("Staging Area Path", config.STAGING_AREA_PATH),
+        ("Staging Area Folder", config.STAGING_AREA_FOLDER),
     ]
 
     for name, value in s3_checks:

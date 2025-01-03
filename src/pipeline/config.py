@@ -33,15 +33,15 @@ DB_PATH = os.getenv("DB_PATH", os.path.join(ROOT_DIR, "sqlMesh", "osaa_mvp.db"))
 TARGET = os.getenv("TARGET", "dev").lower()
 USERNAME = os.getenv("USERNAME", "default").lower()
 
-S3_ENV = TARGET if TARGET in ["prod", "int"] else f"{TARGET}_{USERNAME}"
+# Construct S3 environment path
+S3_ENV = TARGET if TARGET == "prod" else f"dev/{TARGET}_{USERNAME}"
 
 ENABLE_S3_UPLOAD = os.getenv("ENABLE_S3_UPLOAD", "true").lower() == "true"
 
 # S3 configurations with environment-based paths
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "osaa-mvp")
 LANDING_AREA_FOLDER = f"{S3_ENV}/landing"
-TRANSFORMED_AREA_FOLDER = f"{S3_ENV}/transformed"
-STAGING_AREA_PATH = f"{S3_ENV}/staging"
+STAGING_AREA_FOLDER = f"{S3_ENV}/staging"
 
 
 # Custom Exception for Configuration Errors
@@ -148,8 +148,7 @@ def validate_config():
         # Validate S3 folder configurations
         s3_folders = [
             ("LANDING_AREA_FOLDER", LANDING_AREA_FOLDER),
-            ("TRANSFORMED_AREA_FOLDER", TRANSFORMED_AREA_FOLDER),
-            ("STAGING_AREA_PATH", STAGING_AREA_PATH),
+            ("STAGING_AREA_FOLDER", STAGING_AREA_FOLDER),
         ]
 
         for folder_name, folder_path in s3_folders:

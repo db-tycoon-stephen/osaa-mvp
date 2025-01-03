@@ -103,15 +103,12 @@ class Upload:
         Upload a Duckdb table to s3, given the schema and table name and path.
         """
         # Format the fully qualified table name with environment
-        if self.env == "prod":
-            fully_qualified_name = f"{schema_name}.{table_name}"
-        else:
-            fully_qualified_name = f"{schema_name}__{self.env}.{table_name}"
+        fully_qualified_name = f"{schema_name}.{table_name}"
 
-        # Modify the query to use the correct table name
+        # Use the correct fully qualified name in the query
         self.con.sql(
             f"""
-            COPY (SELECT * FROM {schema_name}.{table_name})
+            COPY (SELECT * FROM {fully_qualified_name})
             TO '{s3_file_path}'
             (FORMAT 'parquet', OVERWRITE_OR_IGNORE 1);
         """
@@ -132,12 +129,14 @@ class Upload:
             # Define upload targets dynamically
             upload_targets = []
             for schema, table in sqlmesh_models:
-                # Determine the category (edu or wdi) based on the table name or schema
-                category = "edu" if "edu" in schema.lower() else "wdi"
-
-                # Construct S3 path
-                s3_path = f"s3://{config.S3_BUCKET_NAME}/{config.TRANSFORMED_AREA_FOLDER}/{category}/{table}.parquet"
-
+                # Extract schema name without environment suffix (e.g., "__dev" or "__prod")
+                base_schema = schema.split('__')[0]
+                
+                # Special case for indicators table
+                if table == "indicators":
+                    s3_path = f"s3://{config.S3_BUCKET_NAME}/{config.STAGING_AREA_FOLDER}/master/{table}.parquet"
+                else:
+                    s3_path = f"s3://{config.S3_BUCKET_NAME}/{config.STAGING_AREA_FOLDER}/source/{base_schema}/{table}.parquet"
                 upload_targets.append((schema, table, s3_path))
 
             # Execute uploads

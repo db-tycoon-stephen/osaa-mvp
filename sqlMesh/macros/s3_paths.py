@@ -7,7 +7,7 @@ environment variables and fully qualified table names.
 Key features:
 - Generate S3 landing paths for raw data
 - Generate S3 transformed paths for processed data
-- Support for different environments (prod, int, dev)
+- Support for different environments (prod, dev)
 - Flexible path construction with username and target support
 """
 
@@ -66,7 +66,7 @@ def s3_landing_path(
     username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
-    env_path = target if target in ["prod", "int"] else f"{target}_{username}"
+    env_path = target if target == "prod" else f"dev/{target}_{username}"
 
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
@@ -94,8 +94,8 @@ def s3_transformed_path(
     username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
-    env_path = target if target in ["prod", "int"] else f"{target}_{username}"
+    env_path = target if target == "prod" else f"dev/{target}_{username}"
 
     _, schema, table = parse_fully_qualified_name(fqtn)
-    path = f"s3://{bucket}/{env_path}/transformed/{schema}/{table}.parquet"
+    path = f"s3://{bucket}/{env_path}/staging/{schema}/{table}.parquet"
     return exp.Literal.string(path)

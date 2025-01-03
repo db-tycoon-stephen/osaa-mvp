@@ -15,9 +15,14 @@ COLUMN_SCHEMA = {
 }
 
 
-@model("intermediate.opri", is_sql=True, kind="FULL", columns=COLUMN_SCHEMA)
+@model(
+    "sources.opri",
+    is_sql=True,
+    kind="FULL",
+    columns=COLUMN_SCHEMA,
+)
 def entrypoint(evaluator: MacroEvaluator) -> str:
-    source_folder_path = "sources/opri"
+    source_folder_path = "opri"
 
     opri_data_national = generate_ibis_table(
         evaluator,
@@ -33,7 +38,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         schema_name="opri",
     )
 
-    int_opri = (
+    opri_table = (
         opri_data_national.left_join(opri_label, "indicator_id")
         .select(
             "indicator_id",
@@ -47,4 +52,4 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         .rename(indicator_description="indicator_label_en")
     )
 
-    return ibis.to_sql(int_opri)
+    return ibis.to_sql(opri_table)
