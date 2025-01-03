@@ -10,8 +10,10 @@ COLUMN_SCHEMA = {
     "country_id": "String",
     "indicator_id": "String",
     "year": "Int",
-    "value": "String",
-    "indicator_label": "String",
+    "value": "Decimal",
+    "magnitude": "String",
+    "qualifier": "String",
+    "indicator_description": "String",
     "avg_value_by_country": "Float",
 }
 
@@ -46,15 +48,20 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     )
 
     country_averages = (
-        wdi.filter(
-            (wdi.value.notnull())
-            & (wdi.value != "")
-            & (wdi.value.cast("float").notnull())
+        wdi.filter(wdi.value.notnull())
+        .group_by(["country_id", "indicator_id"])
+        .agg(avg_value_by_country=wdi.value.mean())
+        .join(wdi, ["country_id", "indicator_id"])
+        .select(
+            "country_id",
+            "indicator_id",
+            "year",
+            "value",
+            "magnitude",
+            "qualifier",
+            "indicator_description",
+            "avg_value_by_country"
         )
-        .group_by("country_id")
-        .aggregate(avg_value_by_country=wdi.value.cast("float").mean())
     )
 
-    final = wdi.left_join(country_averages, "country_id")
-
-    return ibis.to_sql(final)
+    return ibis.to_sql(country_averages)
