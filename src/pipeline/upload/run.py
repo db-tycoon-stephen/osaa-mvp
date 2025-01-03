@@ -132,8 +132,18 @@ class Upload:
             # Define upload targets dynamically
             upload_targets = []
             for schema, table in sqlmesh_models:
-                # Determine the category (edu or wdi) based on the table name or schema
-                category = "edu" if "edu" in schema.lower() else "wdi"
+                # Extract category from schema name (e.g., wdi, edu, sdg, opri)
+                schema_lower = schema.lower()
+                if "edu" in schema_lower:
+                    category = "edu"
+                elif "wdi" in schema_lower:
+                    category = "wdi"
+                elif "sdg" in schema_lower:
+                    category = "sdg"
+                elif "opri" in schema_lower:
+                    category = "opri"
+                else:
+                    category = "other"  # Fallback category
 
                 # Construct S3 path
                 s3_path = f"s3://{config.S3_BUCKET_NAME}/{config.TRANSFORMED_AREA_FOLDER}/{category}/{table}.parquet"

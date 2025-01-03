@@ -16,7 +16,7 @@ COLUMN_SCHEMA = {
 
 
 @model(
-    "intermediate.wdi",
+    "sources.wdi",
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,

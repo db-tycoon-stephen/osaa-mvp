@@ -16,7 +16,7 @@ COLUMN_SCHEMA = {
 
 
 @model(
-    "intermediate.sdg",
+    "sources.sdg",
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
@@ -60,7 +60,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         schema_name="sdg",
     )
 
-    int_sdg = (
+    sdg_table = (
         opri_data_national.left_join(opri_label, "indicator_id")
         .select(
             "indicator_id",
@@ -74,4 +74,4 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
         .rename(indicator_description="indicator_label_en")
     )
 
-    return ibis.to_sql(int_sdg)
+    return ibis.to_sql(sdg_table)
