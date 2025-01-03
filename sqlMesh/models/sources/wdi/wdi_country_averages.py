@@ -4,7 +4,7 @@ import ibis
 import os
 from macros.ibis_expressions import generate_ibis_table
 from macros.s3_paths import s3_transformed_path
-from models.sources.wdi import COLUMN_SCHEMA as WDI_COLUMN_SCHEMA
+from models.sources.wdi.wdi_indicators import COLUMN_SCHEMA as WDI_COLUMN_SCHEMA
 
 COLUMN_SCHEMA = {
     "country_id": "String",

@@ -44,16 +44,16 @@ COLUMN_SCHEMA = {
     """,
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
-    source_folder_path = "sources/sdg"
+    source_folder_path = "sdg"
 
-    opri_data_national = generate_ibis_table(
+    sdg_data_national = generate_ibis_table(
         evaluator,
         table_name="data_national",
         column_schema=get_sql_model_schema(evaluator, "data_national", source_folder_path),
         schema_name="sdg",
     )
 
-    opri_label = generate_ibis_table(
+    sdg_label = generate_ibis_table(
         evaluator,
         table_name="label",
         column_schema=get_sql_model_schema(evaluator, "label", source_folder_path),
@@ -61,7 +61,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     )
 
     sdg_table = (
-        opri_data_national.left_join(opri_label, "indicator_id")
+        sdg_data_national.left_join(sdg_label, "indicator_id")
         .select(
             "indicator_id",
             "country_id",

@@ -17,6 +17,8 @@ from pipeline.config import (
     LANDING_AREA_FOLDER,
     RAW_DATA_DIR,
     S3_BUCKET_NAME,
+    TARGET,
+    USERNAME,
 )
 from pipeline.exceptions import (
     FileConversionError,
@@ -196,7 +198,13 @@ class Ingest:
                 # Convert filename to Parquet
                 file_name_pq = f"{os.path.splitext(file_name_csv)[0]}.parquet"
 
-                s3_file_path = f"s3://{S3_BUCKET_NAME}/{LANDING_AREA_FOLDER}/{s3_sub_folder}/{file_name_pq}"
+                # Construct S3 path
+                logger.info(f"Constructing S3 path with TARGET={TARGET}, USERNAME={USERNAME}")
+                if TARGET == "prod":
+                    s3_file_path = f"s3://{S3_BUCKET_NAME}/landing/{s3_sub_folder}/{file_name_pq}"
+                else:
+                    s3_file_path = f"s3://{S3_BUCKET_NAME}/dev/{TARGET}_{USERNAME}/landing/{s3_sub_folder}/{file_name_pq}"
+                
                 logger.info(f"Uploading to S3: {s3_file_path}")
 
                 if os.path.isfile(local_file_path):
@@ -219,6 +227,8 @@ class Ingest:
         :raises IngestError: If the entire ingestion process fails
         """
         try:
+            logger.info(f"Starting ingestion process with TARGET={TARGET}")
+            
             # Setup S3 secret if enabled
             if ENABLE_S3_UPLOAD:
                 self.setup_s3_secret()

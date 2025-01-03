@@ -23,7 +23,6 @@ MODEL (
       "Related indicators" TEXT,
       "License Type" TEXT
     )
-
   );
 
   SELECT

@@ -15,9 +15,14 @@ COLUMN_SCHEMA = {
 }
 
 
-@model("sources.opri", is_sql=True, kind="FULL", columns=COLUMN_SCHEMA)
+@model(
+    "sources.opri",
+    is_sql=True,
+    kind="FULL",
+    columns=COLUMN_SCHEMA,
+)
 def entrypoint(evaluator: MacroEvaluator) -> str:
-    source_folder_path = "sources/opri"
+    source_folder_path = "opri"
 
     opri_data_national = generate_ibis_table(
         evaluator,

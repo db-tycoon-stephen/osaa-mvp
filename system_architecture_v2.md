@@ -68,13 +68,13 @@ flowchart TB
         subgraph DLK[datalake/]
             direction LR
             PL3[landing/]
-            PT3[transformed/]
+            PT3[staging/]
         end
 
         %% Development Folder
         subgraph DB[username_dev/]
             direction LR
-            DT3[transformed/]
+            DT3[staging/]
         end
     end
 

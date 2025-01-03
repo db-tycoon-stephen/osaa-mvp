@@ -24,7 +24,7 @@ COLUMN_SCHEMA = {
 def entrypoint(evaluator: MacroEvaluator) -> str:
     """Process WDI data and return the transformed Ibis table."""
 
-    source_folder_path = "sources/wdi"
+    source_folder_path = "wdi"
     wdi_csv = generate_ibis_table(
         evaluator,
         table_name="csv",

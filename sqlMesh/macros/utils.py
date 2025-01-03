@@ -1,6 +1,8 @@
 from sqlmesh import macro
 import re
 from constants import SQLMESH_DIR
+import os
+from typing import Union
 
 
 def convert_duckdb_type_to_ibis(duckdb_type):
@@ -31,12 +33,10 @@ def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folde
     Args:
         evaluator: SQLMesh evaluator instance
         sql_file_name: Name of the SQL file without extension
-        folder_path_from_models_folder: Path from models folder (e.g. 'landing/wdi')
-                                      The path should match the new folder structure
+        folder_path_from_models_folder: Path from models folder (e.g. 'edu' or 'wdi')
+                                      The path should match the source data folder
     """
-    file_path = (
-        f"{SQLMESH_DIR}/models/{folder_path_from_models_folder}/{sql_file_name}.sql"
-    )
+    file_path = f"{SQLMESH_DIR}/models/sources/{folder_path_from_models_folder}/{sql_file_name.lower()}.sql"
     with open(file_path, "r") as file:
         sql_content = file.read()
 
@@ -63,3 +63,23 @@ def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folde
     }
 
     return columns_dict
+
+
+def get_s3_path(subfolder_filename: Union[str, str]) -> str:
+    """
+    Constructs an S3 path based on environment variables and the provided subfolder/filename.
+    """
+    bucket = os.environ.get('S3_BUCKET_NAME', 'osaa-mvp')
+    target = os.environ.get('TARGET', 'prod').lower()
+    username = os.environ.get('USERNAME', 'default').lower()
+    
+    if target == "prod":
+        env_path = ""
+    else:
+        env_path = f"{target}_{username}"
+    
+    if not isinstance(subfolder_filename, str):
+        subfolder_filename = str(subfolder_filename).strip("'")
+    
+    path = f's3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet'
+    return path

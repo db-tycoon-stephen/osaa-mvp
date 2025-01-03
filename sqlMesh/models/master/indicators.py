@@ -2,8 +2,8 @@ import ibis
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
-from models.sources.sdg import COLUMN_SCHEMA as SDG_COLUMN_SCHEMA
-from models.sources.opri import COLUMN_SCHEMA as OPRI_COLUMN_SCHEMA
+from models.sources.sdg.sdg_indicators import COLUMN_SCHEMA as SDG_COLUMN_SCHEMA
+from models.sources.opri.opri_indicators import COLUMN_SCHEMA as OPRI_COLUMN_SCHEMA
 
 COLUMN_SCHEMA = {
     "indicator_id": "String",
