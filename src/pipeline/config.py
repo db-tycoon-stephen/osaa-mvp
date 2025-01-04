@@ -39,7 +39,7 @@ S3_ENV = TARGET if TARGET == "prod" else f"dev/{TARGET}_{USERNAME}"
 ENABLE_S3_UPLOAD = os.getenv("ENABLE_S3_UPLOAD", "true").lower() == "true"
 
 # S3 configurations with environment-based paths
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "osaa-mvp")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "unosaa-data-pipeline")
 LANDING_AREA_FOLDER = f"{S3_ENV}/landing"
 STAGING_AREA_FOLDER = f"{S3_ENV}/staging"
 

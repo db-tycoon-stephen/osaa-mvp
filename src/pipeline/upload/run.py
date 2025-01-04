@@ -35,28 +35,20 @@ class Upload:
     def setup_s3_secret(self) -> None:
         """Set up the S3 secret in DuckDB for S3 access.
 
-        Creates a DuckDB secret with AWS credentials, enabling S3 interactions.
-        Logs the setup process and handles any potential errors.
+        Creates a persistent DuckDB secret using AWS credential chain,
+        enabling S3 interactions. Logs the setup process and handles
+        any potential errors.
         """
         try:
             logger.info("🔐 Setting up S3 Secret in DuckDB")
+            logger.info("   Creating persistent S3 secret with credential chain")
 
-            region = self.session.region_name
-            credentials = self.session.get_credentials().get_frozen_credentials()
-
-            logger.info(f"   AWS Region: {region}")
-            logger.info("   Creating S3 secret with AWS credentials")
-
-            self.con.sql(
-                f"""
-            CREATE SECRET my_s3_secret (
-                TYPE S3,
-                KEY_ID '{credentials.access_key}',
-                SECRET '{credentials.secret_key}',
-                REGION '{region}'
-            );
-            """
-            )
+            self.con.sql("""
+                CREATE PERSISTENT SECRET my_s3_secret (
+                    TYPE S3,
+                    PROVIDER CREDENTIAL_CHAIN
+                );
+            """)
             logger.info("✅ S3 secret successfully created in DuckDB")
 
         except Exception as e:
