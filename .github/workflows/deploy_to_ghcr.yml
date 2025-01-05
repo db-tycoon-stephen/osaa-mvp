@@ -23,7 +23,7 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       TARGET: prod
-      USERNAME: ${{ secrets.USERNAME }}
+      USERNAME: github-ci-deploy
       GATEWAY: ${{ secrets.GATEWAY }}
     steps:
     - name: Checkout Repository
