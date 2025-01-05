@@ -18,7 +18,7 @@ jobs:
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       TARGET: qa
       USERNAME: ${{ secrets.USERNAME }}
-      GATEWAY: shared_state
+      GATEWAY: local
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       id: run-container
       env:
         TARGET: qa
-        GATEWAY: shared_state
+        GATEWAY: local
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
