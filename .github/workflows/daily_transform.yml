@@ -22,7 +22,7 @@ jobs:
 
       - name: Run Docker Transform Command
         env:
-          TARGET: Prod
+          TARGET: prod
           GATEWAY: shared_state
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
           AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
@@ -48,4 +48,4 @@ jobs:
             -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
             -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
             ghcr.io/${{ github.repository }}:latest \
-            transform prod
+            transform prod 
