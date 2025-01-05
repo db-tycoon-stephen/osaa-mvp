@@ -141,8 +141,12 @@ class Ingest:
             logger.info(f"Successfully created table {fully_qualified_name}")
 
             # Verify table was created and has data
-            row_count = self.con.sql(f"SELECT COUNT(*) FROM {fully_qualified_name}").fetchone()[0]
-            logger.info(f"Table {fully_qualified_name} created with {row_count} rows")
+            try:
+                row_count = self.con.sql(f"SELECT COUNT(*) FROM {fully_qualified_name}").fetchone()[0]
+                logger.info(f"Table {fully_qualified_name} created with {row_count} rows")
+            except Exception as e:
+                logger.error(f"Failed to get row count for table {fully_qualified_name}: {e}")
+                raise FileConversionError(f"Failed to verify table creation: {e}")
 
             # Attempt S3 upload
             logger.info(f"Attempting to upload to S3: {s3_file_path}")
