@@ -77,7 +77,7 @@ class Upload:
             schemas_query = """
             SELECT DISTINCT schema_name
             FROM information_schema.schemata
-            WHERE LOWER(schema_name) LIKE 'master_%'
+            WHERE LOWER(schema_name) LIKE 'master%'
             """
             schemas = self.con.execute(schemas_query).fetchall()
             logger.info(f"Found {len(schemas)} schemas:")
