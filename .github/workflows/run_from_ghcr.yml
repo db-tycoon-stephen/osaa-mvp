@@ -1,6 +1,10 @@
 name: Build and Test Container on Push
 
-on: push
+on:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-and-test-container:

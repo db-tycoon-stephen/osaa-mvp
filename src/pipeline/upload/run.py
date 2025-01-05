@@ -80,6 +80,9 @@ class Upload:
             WHERE schema_name LIKE '%__dev' OR schema_name LIKE '%__prod'
             """
             schemas = self.con.execute(schemas_query).fetchall()
+            logger.info(f"Found {len(schemas)} SQLMesh schemas:")
+            for (schema,) in schemas:
+                logger.info(f"   • Found schema: {schema}")
 
             models = []
             for (schema,) in schemas:
@@ -90,11 +93,15 @@ class Upload:
                 WHERE table_schema = '{schema}'
                 """
                 tables = self.con.execute(tables_query).fetchall()
+                table_count = len(tables)
+                logger.info(f"   • Schema '{schema}' contains {table_count} tables:")
+                for table in tables:
+                    logger.info(f"     - {table[0]}")
 
                 # Add each table to models list
                 models.extend([(schema, table[0]) for table in tables])
 
-            logger.info(f"Discovered {len(models)} SQLMesh models")
+            logger.info(f"Total discovered SQLMesh models: {len(models)}")
             return models
 
         except Exception as e:
