@@ -8,6 +8,7 @@ across the entire project.
 import logging
 import os
 import sys
+import traceback
 from typing import Optional, Union
 
 import colorlog
@@ -43,9 +44,7 @@ def create_logger(
 
     # Custom log format with clear structure
     formatter = colorlog.ColoredFormatter(
-        "%(log_color)s[%(levelname)s]%(reset)s "
-        "%(blue)s[%(name)s]%(reset)s "
-        "%(message)s",
+        "%(log_color)s[%(levelname)s]%(reset)s %(blue)s[%(name)s]%(reset)s %(message)s",
         log_colors={
             "DEBUG": "cyan",
             "INFO": "green",
@@ -77,7 +76,7 @@ def create_logger(
 
         # Plain text formatter for file logs
         file_formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            "%(asctime)s - [%(levelname)s] - [%(name)s] - %(message)s"
         )
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
@@ -93,16 +92,15 @@ def log_exception(logger, e, context=None):
     :param e: Exception object
     :param context: Optional additional context for the error
     """
-    logger.critical("🚨 UNEXPECTED ERROR 🚨")
-    logger.critical(f"Error Type: {type(e).__name__}")
-    logger.critical(f"Error Details: {str(e)}")
+    logger.critical("=" * 80)
+    logger.critical("ERROR DETAILS")
+    logger.critical("-" * 80)
+    logger.critical(f"Type: {type(e).__name__}")
+    logger.critical("Traceback:")
+    logger.critical(traceback.format_exc())
 
     if context:
+        logger.critical("-" * 80)
         logger.critical(f"Context: {context}")
 
-    # Optional: Add troubleshooting steps or recommendations
-    logger.critical("Troubleshooting:")
-    logger.critical("  1. Check recent changes")
-    logger.critical("  2. Verify input data")
-    logger.critical("  3. Review system logs")
-    logger.critical("  4. Consult project documentation")
+    logger.critical("=" * 80)
