@@ -67,7 +67,7 @@ def log_aws_initialization_error(error):
 
 def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
     """
-    Initialize S3 client with robust error handling and optional session return.
+    Initialize S3 client using STS to assume a role.
 
     :param return_session: If True, returns both client and session
     :return: S3 client, and optionally the session
@@ -76,88 +76,51 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
     logger = create_logger(__name__)
 
     try:
-        # Comprehensive logging of environment variables
-        logger.info("Checking AWS Environment Variables:")
-        logger.info(
-            f"AWS_ACCESS_KEY_ID: {os.environ.get('AWS_ACCESS_KEY_ID', 'NOT SET')}"
-        )
-        logger.info(
-            f"AWS_SECRET_ACCESS_KEY: {'*' * len(os.environ.get('AWS_SECRET_ACCESS_KEY', '')) or 'NOT SET'}"
-        )
-        logger.info(
-            f"AWS_DEFAULT_REGION: {os.environ.get('AWS_DEFAULT_REGION', 'NOT SET')}"
-        )
+        # Get role ARN from environment
+        role_arn = os.environ.get("AWS_ROLE_ARN")
+        if not role_arn:
+            raise ValueError("AWS_ROLE_ARN is not set in environment variables")
 
-        # Validate AWS credentials
-        access_key = os.environ.get("AWS_ACCESS_KEY_ID")
-        secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
         region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+        
+        # Create STS client
+        sts_client = boto3.client('sts')
+        
+        # Assume role
+        assumed_role_object = sts_client.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName="OsaaMvpSession"
+        )
 
-        # Comprehensive credential validation
-        if not access_key:
-            raise ValueError("AWS_ACCESS_KEY_ID is not set in environment variables")
+        # Get temporary credentials
+        credentials = assumed_role_object['Credentials']
+        
+        # Create session with temporary credentials
+        session = boto3.Session(
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name=region
+        )
 
-        if not secret_key:
-            raise ValueError(
-                "AWS_SECRET_ACCESS_KEY is not set in environment variables"
-            )
+        # Create S3 client
+        s3_client = session.client("s3")
 
-        # Validate key format (basic sanity check)
-        if len(access_key) < 10 or len(secret_key) < 20:
-            raise ValueError("AWS credentials appear to be invalid or incomplete")
-
-        # Check for default/placeholder credentials
-        if access_key.startswith("AKIA") and access_key.endswith("EXAMPLE"):
-            raise ValueError(
-                "Detected placeholder AWS access key. Please provide a valid key."
-            )
-
-        # Create a session with explicit credentials
+        # Verify S3 access
         try:
-            session = boto3.Session(
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-                region_name=region,
-            )
-
-            # Create S3 client
-            s3_client = session.client("s3")
-
-            # Verify S3 access by attempting a simple operation
-            try:
-                # List buckets to verify credentials
-                s3_client.list_buckets()
-                logger.info(
-                    "S3 client initialized successfully. Credentials are valid."
-                )
-            except ClientError as access_error:
-                # More detailed logging for access errors
-                error_code = access_error.response["Error"]["Code"]
-                error_message = access_error.response["Error"]["Message"]
-
-                logger.error(f"S3 Access Error: {error_code}")
-                logger.error(f"Detailed Error Message: {error_message}")
-
-                if error_code == "InvalidClientTokenId":
-                    raise ValueError(
-                        f"Invalid AWS Access Key ID: {access_key}. Please check your credentials."
-                    ) from access_error
-                elif error_code == "SignatureDoesNotMatch":
-                    raise ValueError(
-                        "AWS Secret Access Key is incorrect. Please verify your credentials."
-                    ) from access_error
-                else:
-                    raise
-
-            return (s3_client, session) if return_session else s3_client
-
-        except Exception as session_error:
-            logger.critical(f"Failed to create AWS session: {session_error}")
-            log_aws_initialization_error(session_error)
+            s3_client.list_buckets()
+            logger.info("S3 client initialized successfully with assumed role.")
+        except ClientError as access_error:
+            error_code = access_error.response["Error"]["Code"]
+            error_message = access_error.response["Error"]["Message"]
+            logger.error(f"S3 Access Error: {error_code}")
+            logger.error(f"Detailed Error Message: {error_message}")
             raise
 
-    except (ValueError, ClientError) as e:
-        # Store the error for later handling
+        return (s3_client, session) if return_session else s3_client
+
+    except Exception as e:
+        logger.critical(f"Failed to initialize S3 client: {e}")
         log_aws_initialization_error(e)
         raise
 

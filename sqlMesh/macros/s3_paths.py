@@ -90,7 +90,7 @@ def s3_transformed_path(
         S3 path as a SQLGlot literal expression
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
-    target = os.environ.get("TARGET", "dev").lower()
+    target = os.environ.get("TARGET", "prod").lower()
     username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment

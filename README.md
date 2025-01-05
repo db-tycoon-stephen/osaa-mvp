@@ -86,13 +86,61 @@ Note: After installing Docker Desktop, you'll need to start the application befo
    **AWS Configuration:**
    ```bash
    # Access credentials for AWS services
-   AWS_ACCESS_KEY_ID=<your-key>        # AWS authentication
-   AWS_SECRET_ACCESS_KEY=<your-secret>  # AWS authentication
-   AWS_DEFAULT_REGION=us-east-1         # AWS region where resources are located
+   AWS_ROLE_ARN=arn:aws:iam::<account-id>:role/<role-name>  # IAM role to assume
+   AWS_DEFAULT_REGION=us-east-1                             # AWS region where resources are located
+
+   # Optional: Enable/disable S3 upload functionality
+   ENABLE_S3_UPLOAD=true                                    # Set to false to disable S3 uploads
 
    # S3 bucket settings
-   S3_BUCKET_NAME=osaa-mvp             # Where the data pipeline stores its files
+   S3_BUCKET_NAME=unosaa-data-pipeline                      # Where the data pipeline stores its files
    ```
+
+   The pipeline uses AWS Security Token Service (STS) to assume the specified role, which is more secure than using long-term access keys. The system will:
+   1. Validate the AWS role ARN and region
+   2. Attempt to assume the specified role using STS
+   3. Create temporary credentials for secure S3 access
+   4. Validate the credentials by testing S3 bucket access
+
+   If any validation step fails, the pipeline will provide detailed error messages and troubleshooting steps.
+
+   **Required IAM Role Permissions:**
+   The IAM role specified in `AWS_ROLE_ARN` needs the following permissions:
+   ```json
+   {
+      "Version": "2012-10-17",
+      "Statement": [
+         {
+               "Effect": "Allow",
+               "Action": [
+                  "sts:AssumeRole"
+               ],
+               "Resource": insert_arn_here
+         },
+         {
+               "Effect": "Allow",
+               "Action": [
+                  "s3:*"
+               ],
+               "Resource": "arn:aws:s3:::unosaa-data-pipeline"
+         }
+      ]
+   }
+   ```
+
+   This policy grants the necessary permissions for the pipeline to:
+   - List bucket contents
+   - Read existing objects
+   - Upload new objects
+
+   **Environment-Specific S3 Paths:**
+   The pipeline automatically organizes data in S3 based on your environment:
+   - Production: `s3://unosaa-data-pipeline/prod/...`
+   - Development: `s3://unosaa-data-pipeline/dev/{TARGET}_{USERNAME}/...`
+
+   Each environment has two main folders:
+   - `/landing`: For raw data uploads
+   - `/staging`: For processed data
 
    **Pipeline Control:**
    ```bash
@@ -175,7 +223,7 @@ To add a new dataset to the project:
    ```
 
 2. **Create SQLMesh Models**
-   All datasets must be transformed into a vertical format and unioned into the final `models/marts/indicators.py` model. The required format is:
+   All datasets must be transformed into a vertical format and unioned into the final `models/master/indicators.py` model. The required format is:
    ```
    country_id    indicator_id    year    value    indicator_label    database
    ----------    ------------    ----    -----    ---------------    --------
@@ -186,14 +234,15 @@ To add a new dataset to the project:
    Create your models in this structure:
    ```
    sqlMesh/models/
-   ├── sources/                # Define how to read your data
-   │   └── your_source/
-   │       └── data.sql       # Raw data ingestion
-   ├── intermediate/          # Add processing steps
-   │   └── your_process.py    # Transform to vertical format
-   └── marts/                 # Final analytics
-       └── indicators.py      # All datasets union here
+   ├── sources/                # Source data models and transformations
+   │   └── your_source/       # One folder per data source
+   │       ├── data.sql       # Raw data ingestion
+   │       └── transform.py   # Data transformations
+   └── master/                # Final unified models
+       └── indicators.py      # Combined dataset
    ```
+
+   All datasets must be transformed into a vertical format and unioned into the final `models/master/indicators.py` model.
 
 3. **Test Your Changes**
    ```bash
@@ -233,27 +282,27 @@ The pipeline commands are defined in our `justfile` and exposed through Docker C
    # Default development environment (recommended for most users)
    docker compose run --rm pipeline etl
    # or explicitly:
-   docker compose run --rm \
-     -e TARGET=dev \
-     -e USERNAME=your_name \
-     pipeline etl
+   docker compose run --rm -e TARGET=dev -e USERNAME=your_name pipeline etl
 
    # Quality Assurance environment (used by CI/CD pipelines)
    # Only use when testing changes for production
-   docker compose run --rm \
-     -e TARGET=qa \
-     -e GATEWAY=shared_state \
-     pipeline etl
+   docker compose run --rm -e TARGET=qa -e GATEWAY=shared_state pipeline etl
 
    # Production environment (restricted access)
    # Only use when authorized to process official data
-   docker compose run --rm \
-     -e TARGET=prod \
-     -e GATEWAY=shared_state \
-     pipeline etl
+   docker compose run --rm -e TARGET=prod -e GATEWAY=shared_state pipeline etl
    ```
 
-   Note: Stay in the development environment unless specifically instructed otherwise by the project team. This ensures data safety and provides an isolated workspace for your work.
+   Note: When setting environment variables with docker compose run, the -e flags must come BEFORE the service name (pipeline).
+   ```bash
+   # CORRECT:
+   docker compose run --rm -e TARGET=prod pipeline etl
+
+   # INCORRECT - variables won't be set:
+   docker compose run --rm pipeline etl -e TARGET=prod
+   ```
+
+   Stay in the development environment unless specifically instructed otherwise by the project team. This ensures data safety and provides an isolated workspace for your work.
 
 4. **Data Flow Examples**
    ```bash
@@ -320,20 +369,21 @@ s3://osaa-mvp/                 # Base bucket
 │
 ├── dev_{username}/           # Development environment (e.g., dev_johndoe/)
 │   ├── landing/             # Landing zone for raw data
-│   │   ├── edu/            # Education datasets in Parquet format
-│   │   └── wdi/            # World Development Indicators in Parquet
-│   ├── staging/            # Intermediate processed data
-│   └── analytics/          # Final transformed data
+│   └── staging/             # Staging area
+│       ├── source/          # Source data models
+│       └── master/          # Final unified models
 │
 ├── qa/                      # QA environment
 │   ├── landing/            # QA landing zone
-│   ├── staging/            # QA staging area
-│   └── analytics/          # QA analytics data
+│   └── staging/            # QA staging area
+│       ├── source/         # Source data models
+│       └── master/         # Final unified models
 │
 └── prod/                    # Production environment
     ├── landing/            # Production landing zone
-    ├── staging/            # Production staging area
-    └── analytics/          # Production analytics data
+    └── staging/            # Production staging area
+        ├── source/         # Source data models
+        └── master/         # Final unified models
 ```
 
 Each environment (dev, qa, prod) has its own landing zone under `<environment>/landing/`. For example:

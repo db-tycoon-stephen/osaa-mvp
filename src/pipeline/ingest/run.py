@@ -6,6 +6,7 @@ and optionally uploading them to S3 for the United Nations OSAA MVP project.
 
 import os
 import re
+import tempfile
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -56,7 +57,11 @@ class Ingest:
         """
         logger.info("Initializing Ingest Process")
 
+        # Initialize DuckDB with required extensions
         self.con = duckdb.connect()
+        self.con.install_extension('httpfs')
+        self.con.load_extension('httpfs')
+        
         if ENABLE_S3_UPLOAD:
             logger.info("Initializing S3 client...")
             self.s3_client, self.session = s3_init(return_session=True)
@@ -68,7 +73,7 @@ class Ingest:
 
     def setup_s3_secret(self):
         """
-        Set up the S3 secret in DuckDB for S3 access.
+        Set up the S3 secret in DuckDB for S3 access using AWS credential chain.
 
         :raises S3ConfigurationError: If there are issues setting up S3 secret
         """
@@ -77,29 +82,31 @@ class Ingest:
             return
 
         try:
-            # Validate credentials
-            if not self.session:
-                raise S3ConfigurationError("No AWS session available")
+            logger.info("🔐 Setting up S3 Secret in DuckDB")
+            logger.info("   Creating S3 secret with assumed credentials")
 
             region = self.session.region_name
             credentials = self.session.get_credentials().get_frozen_credentials()
+            logger.info(f"   Using AWS region: {region}")
 
-            if not all([credentials.access_key, credentials.secret_key, region]):
-                raise S3ConfigurationError("Incomplete S3 credentials")
+            # Drop existing secret if it exists
+            self.con.sql("DROP SECRET IF EXISTS my_s3_secret")
+            logger.info("   Dropped existing S3 secret")
 
-            self.con.sql(
-                f"""
-            CREATE SECRET IF NOT EXISTS my_s3_secret (
-                TYPE S3,
-                KEY_ID '{credentials.access_key}',
-                SECRET '{credentials.secret_key}',
-                REGION '{region}'
-            );
+            # Create the SQL statement
+            sql_statement = f"""
+                CREATE PERSISTENT SECRET my_s3_secret (
+                    TYPE S3,
+                    KEY_ID '{credentials.access_key}',
+                    SECRET '{credentials.secret_key}',
+                    SESSION_TOKEN '{credentials.token}',
+                    REGION '{region}'
+                );
             """
-            )
-            logger.info("S3 secret setup in DuckDB successfully.")
+            self.con.sql(sql_statement)
+            logger.info("✅ S3 secret successfully created in DuckDB")
 
-        except (NoCredentialsError, ClientError) as e:
+        except Exception as e:
             error_msg = f"AWS Credentials Error: {e}"
             log_exception(logger, e, {"context": "S3 secret setup"})
             raise S3ConfigurationError(error_msg)
@@ -120,7 +127,10 @@ class Ingest:
                 table_name.group(0).replace("-", "_") if table_name else "UNNAMED"
             )
             fully_qualified_name = "source." + table_name
+            logger.info(f"Processing file {local_file_path} into table {fully_qualified_name}")
 
+            # Create schema and table
+            logger.info("Creating schema and table...")
             self.con.sql("CREATE SCHEMA IF NOT EXISTS source")
             self.con.sql(f"DROP TABLE IF EXISTS {fully_qualified_name}")
             self.con.sql(
@@ -130,16 +140,24 @@ class Ingest:
                 FROM read_csv('{local_file_path}', header = true)
             """
             )
-
             logger.info(f"Successfully created table {fully_qualified_name}")
 
-            self.con.sql(
-                f"""
+            # Verify table was created and has data
+            try:
+                row_count = self.con.sql(f"SELECT COUNT(*) FROM {fully_qualified_name}").fetchone()[0]
+                logger.info(f"Table {fully_qualified_name} created with {row_count} rows")
+            except Exception as e:
+                logger.error(f"Failed to get row count for table {fully_qualified_name}: {e}")
+                raise FileConversionError(f"Failed to verify table creation: {e}")
+
+            # Attempt S3 upload
+            logger.info(f"Attempting to upload to S3: {s3_file_path}")
+            copy_sql = f"""
                 COPY (SELECT * FROM {fully_qualified_name})
                 TO '{s3_file_path}'
                 (FORMAT PARQUET)
             """
-            )
+            self.con.sql(copy_sql)
 
             logger.info(
                 f"Successfully converted and uploaded {local_file_path} to {s3_file_path}"
@@ -149,7 +167,9 @@ class Ingest:
             logger.error(f"File not found error: {e}")
             raise FileConversionError(str(e))
         except Exception as e:
-            logger.error(f"Unexpected error in file conversion: {e}")
+            logger.error(f"Unexpected error: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error details: {str(e)}")
             raise FileConversionError(f"Conversion failed: {e}")
 
     def generate_file_to_s3_folder_mapping(self, raw_data_dir: str) -> dict:
@@ -205,7 +225,7 @@ class Ingest:
                 else:
                     s3_file_path = f"s3://{S3_BUCKET_NAME}/dev/{TARGET}_{USERNAME}/landing/{s3_sub_folder}/{file_name_pq}"
                 
-                logger.info(f"Uploading to S3: {s3_file_path}")
+                logger.info(s3_file_path)
 
                 if os.path.isfile(local_file_path):
                     self.convert_csv_to_parquet_and_upload(
