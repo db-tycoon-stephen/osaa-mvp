@@ -87,7 +87,7 @@ Note: After installing Docker Desktop, you'll need to start the application befo
    ```bash
    # Access credentials for AWS services
    AWS_ROLE_ARN=arn:aws:iam::<account-id>:role/<role-name>  # IAM role to assume
-   AWS_DEFAULT_REGION=us-east-2                             # AWS region where resources are located
+   AWS_DEFAULT_REGION=us-east-1                             # AWS region where resources are located
 
    # Optional: Enable/disable S3 upload functionality
    ENABLE_S3_UPLOAD=true                                    # Set to false to disable S3 uploads
