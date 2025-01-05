@@ -66,7 +66,7 @@ def s3_landing_path(
     username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
-    env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+    env_path = target if target == "prod" else f"dev/{target}_{username}"
 
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
@@ -90,11 +90,11 @@ def s3_transformed_path(
         S3 path as a SQLGlot literal expression
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
-    target = os.environ.get("TARGET", "dev").lower()
+    target = os.environ.get("TARGET", "prod").lower()
     username = os.environ.get("USERNAME", "default").lower()
 
     # Construct the environment path segment
-    env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+    env_path = target if target == "prod" else f"dev/{target}_{username}"
 
     _, schema, table = parse_fully_qualified_name(fqtn)
     path = f"s3://{bucket}/{env_path}/staging/{schema}/{table}.parquet"

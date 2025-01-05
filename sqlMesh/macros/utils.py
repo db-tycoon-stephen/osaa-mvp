@@ -74,7 +74,7 @@ def get_s3_path(subfolder_filename: Union[str, str]) -> str:
     username = os.environ.get('USERNAME', 'default').lower()
     
     if target == "prod":
-        env_path = "prod"
+        env_path = target
     else:
         env_path = f"{target}_{username}"
     
