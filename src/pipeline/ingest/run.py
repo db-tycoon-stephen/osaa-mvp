@@ -93,7 +93,8 @@ class Ingest:
             self.con.sql("DROP SECRET IF EXISTS my_s3_secret")
             logger.info("   Dropped existing S3 secret")
 
-            self.con.sql(f"""
+            # Create the SQL statement
+            sql_statement = f"""
                 CREATE PERSISTENT SECRET my_s3_secret (
                     TYPE S3,
                     KEY_ID '{credentials.access_key}',
@@ -101,7 +102,8 @@ class Ingest:
                     SESSION_TOKEN '{credentials.token}',
                     REGION '{region}'
                 );
-            """)
+            """
+            self.con.sql(sql_statement)
             logger.info("✅ S3 secret successfully created in DuckDB")
 
         except Exception as e:
@@ -223,7 +225,7 @@ class Ingest:
                 else:
                     s3_file_path = f"s3://{S3_BUCKET_NAME}/dev/{TARGET}_{USERNAME}/landing/{s3_sub_folder}/{file_name_pq}"
                 
-                logger.info(f"Uploading to S3: {s3_file_path}")
+                logger.info(s3_file_path)
 
                 if os.path.isfile(local_file_path):
                     self.convert_csv_to_parquet_and_upload(
