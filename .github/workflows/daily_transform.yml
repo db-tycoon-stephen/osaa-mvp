@@ -19,7 +19,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
-      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       TARGET: prod
       USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
       GATEWAY: local
@@ -42,7 +42,7 @@ jobs:
           AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB || 'postgres' }}
           USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
