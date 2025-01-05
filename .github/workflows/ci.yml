@@ -17,8 +17,8 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       TARGET: prod
-      USERNAME: github-ci-test
-      GATEWAY: ${{ secrets.GATEWAY }}
+      USERNAME: ${{ secrets.USERNAME }}
+      GATEWAY: github_test_env
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
           -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
           -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
           -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
-          osaa-mvp etl
+          osaa-mvp etl ci
 
     - name: Check Container Status
       run: |

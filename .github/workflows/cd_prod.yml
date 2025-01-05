@@ -30,7 +30,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
           POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE || 'postgres' }}
-          USERNAME: github-ci-daily
+          USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
         run: |
           docker run --rm \
@@ -48,4 +48,4 @@ jobs:
             -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
             -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
             ghcr.io/${{ github.repository }}:latest \
-            transform
+            transform prod
