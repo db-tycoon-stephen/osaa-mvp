@@ -24,6 +24,7 @@ jobs:
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       TARGET: qa
       USERNAME: ${{ secrets.USERNAME }}
+      GATEWAY: shared_state
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -47,6 +48,7 @@ jobs:
       run: |
         docker run --name osaa-mvp \
           -e TARGET=$TARGET \
+          -e GATEWAY=$GATEWAY \
           -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
