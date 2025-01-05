@@ -83,12 +83,23 @@ class Ingest:
 
         try:
             logger.info("🔐 Setting up S3 Secret in DuckDB")
-            logger.info("   Creating persistent S3 secret with credential chain")
+            logger.info("   Creating S3 secret with assumed credentials")
 
-            self.con.sql("""
-                CREATE PERSISTENT SECRET IF NOT EXISTS my_s3_secret (
+            region = self.session.region_name
+            credentials = self.session.get_credentials().get_frozen_credentials()
+            logger.info(f"   Using AWS region: {region}")
+
+            # Drop existing secret if it exists
+            self.con.sql("DROP SECRET IF EXISTS my_s3_secret")
+            logger.info("   Dropped existing S3 secret")
+
+            self.con.sql(f"""
+                CREATE PERSISTENT SECRET my_s3_secret (
                     TYPE S3,
-                    PROVIDER CREDENTIAL_CHAIN
+                    KEY_ID '{credentials.access_key}',
+                    SECRET '{credentials.secret_key}',
+                    SESSION_TOKEN '{credentials.token}',
+                    REGION '{region}'
                 );
             """)
             logger.info("✅ S3 secret successfully created in DuckDB")
@@ -140,7 +151,6 @@ class Ingest:
                 TO '{s3_file_path}'
                 (FORMAT PARQUET)
             """
-            logger.debug(f"Executing SQL: {copy_sql}")
             self.con.sql(copy_sql)
 
             logger.info(
@@ -151,7 +161,7 @@ class Ingest:
             logger.error(f"File not found error: {e}")
             raise FileConversionError(str(e))
         except Exception as e:
-            logger.error(f"Unexpected error in file conversion: {e}")
+            logger.error(f"Unexpected error: {e}")
             logger.error(f"Error type: {type(e).__name__}")
             logger.error(f"Error details: {str(e)}")
             raise FileConversionError(f"Conversion failed: {e}")

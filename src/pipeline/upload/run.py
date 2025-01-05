@@ -41,12 +41,23 @@ class Upload:
         """
         try:
             logger.info("🔐 Setting up S3 Secret in DuckDB")
-            logger.info("   Creating persistent S3 secret with credential chain")
+            logger.info("   Creating S3 secret with assumed credentials")
 
-            self.con.sql("""
+            region = self.session.region_name
+            credentials = self.session.get_credentials().get_frozen_credentials()
+            logger.info(f"   Using AWS region: {region}")
+
+            # Drop existing secret if it exists
+            self.con.sql("DROP SECRET IF EXISTS my_s3_secret")
+            logger.info("   Dropped existing S3 secret")
+
+            self.con.sql(f"""
                 CREATE PERSISTENT SECRET my_s3_secret (
                     TYPE S3,
-                    PROVIDER CREDENTIAL_CHAIN
+                    KEY_ID '{credentials.access_key}',
+                    SECRET '{credentials.secret_key}',
+                    SESSION_TOKEN '{credentials.token}',
+                    REGION '{region}'
                 );
             """)
             logger.info("✅ S3 secret successfully created in DuckDB")
