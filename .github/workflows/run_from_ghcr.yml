@@ -37,24 +37,23 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
-        POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE || 'postgres' }}
+        POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB || 'postgres' }}
         USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
         POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
       run: |
         docker run --name osaa-mvp \
           -e TARGET=$TARGET \
-          -e GATEWAY=$GATEWAY \
+          -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
+          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
           -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
-          -e AWS_ROLE_ARN=${{ secrets.AWS_ROLE_ARN }} \
-          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
           -e USERNAME=$USERNAME \
-          -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+          -e POSTGRES_HOST=$POSTGRES_HOST \
           -e POSTGRES_PORT=$POSTGRES_PORT \
-          -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
+          -e POSTGRES_USER=$POSTGRES_USER \
+          -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+          -e POSTGRES_DATABASE=$POSTGRES_DB \
           osaa-mvp etl dev_github_ci
 
     - name: Check Container Status

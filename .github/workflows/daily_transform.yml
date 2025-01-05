@@ -1,4 +1,4 @@
-name: Daily Transformation Job
+name: Daily ETL Job
 
 on:
   schedule:
@@ -7,8 +7,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  transform:
+  etl:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      TARGET: qa
+      USERNAME: ${{ secrets.USERNAME }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,7 +33,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Docker Transform Command
+      - name: Run Docker ETL Command
         env:
           TARGET: prod
           GATEWAY: shared_state
@@ -29,23 +42,22 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
-          POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE || 'postgres' }}
+          POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB || 'postgres' }}
           USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
         run: |
           docker run --rm \
             -e TARGET=$TARGET \
-            -e GATEWAY=$GATEWAY \
-            -e AWS_ROLE_ARN=${{ secrets.AWS_ROLE_ARN }} \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
             -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
             -e USERNAME=$USERNAME \
-            -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+            -e POSTGRES_HOST=$POSTGRES_HOST \
             -e POSTGRES_PORT=$POSTGRES_PORT \
-            -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
-            ghcr.io/un-osaa/osaa-mvp:latest \
+            -e POSTGRES_USER=$POSTGRES_USER \
+            -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+            -e POSTGRES_DATABASE=$POSTGRES_DB \
+            ghcr.io/${{ format(github.repository, 'lower') }}:latest \
             etl prod 
