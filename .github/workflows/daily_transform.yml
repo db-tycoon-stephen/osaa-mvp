@@ -47,5 +47,5 @@ jobs:
             -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
             -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
             -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
-            ghcr.io/${{ format(github.repository, 'lower') }}:latest \
-            transform prod 
+            ghcr.io/un-osaa/osaa-mvp:latest \
+            etl prod 
