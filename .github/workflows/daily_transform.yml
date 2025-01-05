@@ -14,14 +14,14 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
       POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB || 'postgres' }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
-      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
       TARGET: qa
-      USERNAME: ${{ secrets.USERNAME }}
+      USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
       GATEWAY: shared_state
     steps:
       - name: Checkout repository
@@ -60,6 +60,6 @@ jobs:
             -e POSTGRES_PORT=$POSTGRES_PORT \
             -e POSTGRES_USER=$POSTGRES_USER \
             -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-            -e POSTGRES_DATABASE=$POSTGRES_DB \
+            -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
             ghcr.io/${{ format(github.repository, 'lower') }}:latest \
             etl prod 
