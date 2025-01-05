@@ -33,6 +33,7 @@ jobs:
       id: run-container
       env:
         TARGET: qa
+        GATEWAY: shared_state
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
