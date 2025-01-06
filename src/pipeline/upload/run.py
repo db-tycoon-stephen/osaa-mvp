@@ -77,10 +77,10 @@ class Upload:
             schemas_query = """
             SELECT DISTINCT schema_name
             FROM information_schema.schemata
-            WHERE schema_name LIKE '%__dev' OR schema_name LIKE '%__prod'
+            WHERE LOWER(schema_name) LIKE 'master%'
             """
             schemas = self.con.execute(schemas_query).fetchall()
-            logger.info(f"Found {len(schemas)} SQLMesh schemas:")
+            logger.info(f"Found {len(schemas)} schemas:")
             for (schema,) in schemas:
                 logger.info(f"   • Found schema: {schema}")
 
