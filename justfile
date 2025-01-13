@@ -19,31 +19,30 @@ default:
 install:
     @echo "🚀 OSAA MVP: Setting up development environment..."
     @echo "   Creating virtual environment in {{venv_dir}}..."
-    @python -m venv {{venv_dir}}
-    @. {{venv_dir}}/bin/activate
+    @uv venv {{venv_dir}}
     @echo "   Upgrading pip..."
-    @pip install --upgrade pip
+    @uv pip install --upgrade pip
     @echo "   Installing project dependencies..."
-    @pip install -r {{requirements_file}}
+    @uv pip install -r {{requirements_file}}
     @echo "✅ Development environment setup complete!"
 
 # Uninstall the package and clean up environment
 uninstall:
     @echo "🧹 OSAA MVP: Cleaning up development environment..."
-    @pip uninstall -y {{package}}
+    @uv pip uninstall -y {{package}}
     @rm -rf {{venv_dir}}
     @echo "✨ Environment cleaned successfully!"
 
 # Run Ingest pipeline with optional arguments for sources
 ingest:
     @echo "📥 OSAA MVP: Starting data ingestion process..."
-    @python -m pipeline.ingest.run
+    @uv run python -m pipeline.ingest.run
     @echo "✅ Data ingestion completed successfully!"
 
 # Run SQLMesh transformations
 transform:
     @echo "🔄 OSAA MVP: Running SQLMesh transformations..."
-    @cd sqlMesh && sqlmesh --gateway {{gateway}} plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+    @cd sqlMesh && uv run sqlmesh --gateway {{gateway}} plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
     @echo "✅ SQLMesh transformations completed!"
 
 # Run SQLMesh transformations in dry-run mode (no S3 uploads)
@@ -52,15 +51,15 @@ transform_dry_run:
     @export ENABLE_S3_UPLOAD=false
     @export RAW_DATA_DIR=data/raw
     @echo "   Performing local data ingestion..."
-    @python -m pipeline.ingest.run
+    @uv run python -m pipeline.ingest.run
     @echo "   Local ingestion complete. Starting dry-run transformations..."
-    @cd sqlMesh && sqlmesh --gateway {{gateway}} plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
+    @cd sqlMesh && uv run sqlmesh --gateway {{gateway}} plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
     @echo "✅ Dry-run pipeline completed successfully!"
 
 # Run Upload pipeline with optional arguments for sources
 upload:
     @echo "📤 OSAA MVP: Starting data upload process..."
-    @python -m pipeline.upload.run
+    @uv run python -m pipeline.upload.run
     @echo "✅ Data upload completed successfully!"
 
 # Run the complete pipeline
@@ -81,7 +80,7 @@ rebuild:
 # Run all tests
 test:
     @echo "🧪 Running project tests..."
-    @pytest tests/
+    @uv run pytest tests/
 
 # Run type checking
 typecheck:
