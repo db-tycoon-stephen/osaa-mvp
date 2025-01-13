@@ -57,36 +57,9 @@ transform_dry_run:
     @cd sqlMesh && sqlmesh --gateway {{gateway}} plan --auto-apply --include-unmodified --create-from prod --no-prompts {{target}}
     @echo "✅ Dry-run pipeline completed successfully!"
 
-# Run Upload pipeline with optional arguments for sources
-upload:
-    @echo "📤 OSAA MVP: Starting data upload process..."
-    @python -m pipeline.upload.run
-    @echo "✅ Data upload completed successfully!"
-
 # Run the complete pipeline
-etl: ingest transform upload
+etl: ingest transform
     @echo "🚀 OSAA MVP: Full ETL pipeline executed successfully!"
-
-# Rebuild the Docker container from scratch
-rebuild:
-    @echo "🚀 OSAA MVP: Rebuilding Docker container..."
-    @echo "   Stopping and removing existing containers..."
-    @docker-compose down --rmi all --volumes
-    @echo "   Building new container from scratch (no cache)..."
-    @docker-compose build --no-cache
-    @echo "✅ Docker container rebuilt successfully!"
-    @docker-compose up -d
-    @echo "✅ Container started in detached mode!"
-
-# Run all tests
-test:
-    @echo "🧪 Running project tests..."
-    @pytest tests/
-
-# Run type checking
-typecheck:
-    @echo "🔍 Running type checks..."
-    @mypy src/
 
 # Clean up development artifacts
 clean:
@@ -94,15 +67,6 @@ clean:
     @rm -rf .venv
     @find . -type f -name "*.pyc" -delete
     @rm -rf .mypy_cache .pytest_cache htmlcov
-
-# Safety check for dependencies
-safety:
-    @echo "🔒 Checking dependencies for known security vulnerabilities..."
-    @safety check
-
-# Full development validation
-validate: typecheck test safety
-    @echo "✅ All checks passed successfully!"
 
 # Open the project repository in the browser
 repo:

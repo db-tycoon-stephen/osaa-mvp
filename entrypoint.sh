@@ -25,9 +25,6 @@ case "$1" in
     cd sqlMesh
     sqlmesh ui --port "${UI_PORT:-8080}"
     ;;
-  "upload")
-    python -m pipeline.upload.run
-    ;;
   "etl")
     echo "Starting pipeline"
 
@@ -39,11 +36,6 @@ case "$1" in
     cd sqlMesh
     sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
-
-    cd ..
-    echo "Start upload"
-    python -m pipeline.upload.run
-    echo "End upload"
     ;;
   "config_test")
     python -m pipeline.config_test
@@ -54,7 +46,6 @@ case "$1" in
     echo "Available commands:"
     echo "  ingest       - Run the data ingestion process"
     echo "  transform    - Run SQLMesh transformations"
-    echo "  upload       - Run the data upload process"
     echo "  etl          - Run the complete pipeline (ingest + transform + upload)"
     echo "  ui           - Start the SQLMesh UI server"
     echo "  config_test  - Test and display current configuration settings"
