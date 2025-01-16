@@ -4,7 +4,6 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
 from macros.utils import find_indicator_models
-from constants import SQLMESH_DIR
 
 COLUMN_SCHEMA = {
     "indicator_id": "String",
