@@ -78,4 +78,6 @@ MODEL (
   FROM
       read_parquet(
         @s3_landing_path('wdi/WDICSV')
-    )
+    );
+
+-- @upload_to_s3();

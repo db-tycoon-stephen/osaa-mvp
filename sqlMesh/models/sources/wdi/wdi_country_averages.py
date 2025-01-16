@@ -1,9 +1,8 @@
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh import model
 import ibis
-import os
 from macros.ibis_expressions import generate_ibis_table
-from macros.s3_paths import s3_transformed_path
+from sqlglot import exp
 from models.sources.wdi.wdi_indicators import COLUMN_SCHEMA as WDI_COLUMN_SCHEMA
 
 COLUMN_SCHEMA = {
@@ -17,27 +16,13 @@ COLUMN_SCHEMA = {
     "avg_value_by_country": "Float",
 }
 
-# For post statement
-SCHEMA_TO_COPY_FROM = (
-    "" if os.getenv("TARGET") == "prod" else f"__{os.getenv('TARGET')}"
-)
-
 
 @model(
     "sources.wdi_country_averages",
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
-    post_statements=[
-        f"""
-        @IF(
-            @runtime_stage = 'testing',
-                COPY (SELECT * FROM sources{SCHEMA_TO_COPY_FROM}.wdi_country_averages)
-                TO {s3_transformed_path(MacroEvaluator, 'osaa_mvp.sources.wdi_country_averages')}
-                (FORMAT PARQUET)
-        );
-    """
-    ],
+    # post_statements=[exp.func("upload_to_s3")],
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     wdi = generate_ibis_table(

@@ -37,7 +37,11 @@ def find_indicator_models():
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
+    # post_statements=["@test_post_statement_macro()"]
 )
+
+
+
 def entrypoint(evaluator: MacroEvaluator) -> str:
     # Find all indicator models
     indicator_models = find_indicator_models()

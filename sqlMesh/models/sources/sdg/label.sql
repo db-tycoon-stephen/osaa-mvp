@@ -13,4 +13,6 @@ MODEL (
   FROM
     read_parquet(
         @s3_landing_path('edu/SDG_LABEL')
-    )
+    );
+
+-- @upload_to_s3();

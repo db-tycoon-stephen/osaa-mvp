@@ -3,6 +3,8 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from macros.ibis_expressions import generate_ibis_table
 from macros.utils import get_sql_model_schema
+from sqlglot import exp
+
 
 COLUMN_SCHEMA = {
     "indicator_id": "String",
@@ -20,6 +22,7 @@ COLUMN_SCHEMA = {
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
+    # post_statements=[exp.func("upload_to_s3")],
     description="""
     This model contains Sustainable Development Goals (SDG) data for all countries and indicators.
     Publishing Org: UN

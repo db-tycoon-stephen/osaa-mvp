@@ -30,4 +30,6 @@ MODEL (
   FROM
     read_parquet(
         @s3_landing_path('wdi/WDISeries')
-    )
+    );
+
+-- @upload_to_s3();
