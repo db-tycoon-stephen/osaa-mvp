@@ -2,7 +2,7 @@ from sqlmesh import macro
 import re
 from constants import SQLMESH_DIR
 import os
-from typing import Union
+from typing import Union, List, Optional
 
 
 def _convert_duckdb_type_to_ibis(duckdb_type):
@@ -85,8 +85,14 @@ def get_s3_path(subfolder_filename: Union[str, str]) -> str:
     return path
 
 
-def find_indicator_models():
-    """Find all models ending with _indicators in the sources directory."""
+def find_indicator_models(selected_models: Optional[List[str]] = None) -> List[tuple]:
+    """Find all models ending with _indicators in the sources directory.
+
+    Args:
+        selected_models: Optional list of model names to include (e.g., ['opri']).
+                         If None, all models are included.
+                         If a model name is not found, it will be skipped.
+    """
     indicator_models = []
     sources_dir = os.path.join(SQLMESH_DIR, "models", "sources")
 
@@ -99,7 +105,9 @@ def find_indicator_models():
                 ]
                 for file in indicator_files:
                     module_name = f"models.sources.{source}.{file[:-3]}"
-                    indicator_models.append((source, module_name))
+                    # Check if the module_name is in the selected_models list
+                    if selected_models is None or source in selected_models:
+                        indicator_models.append((source, module_name))
     except FileNotFoundError:
         raise FileNotFoundError(f"Sources directory not found: {sources_dir}")
     except Exception as e:

@@ -23,8 +23,13 @@ COLUMN_SCHEMA = {
     columns=COLUMN_SCHEMA,
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
-    # Find all indicator models
-    indicator_models = find_indicator_models()
+    indicator_models = find_indicator_models(
+        [
+            "opri",
+            "sdg",
+            "wdi",
+        ]
+    )
 
     # Import each model and get its table
     tables = []
