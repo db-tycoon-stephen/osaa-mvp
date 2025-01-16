@@ -29,7 +29,6 @@ install:
 # Uninstall the package and clean up environment
 uninstall:
     @echo "🧹 OSAA MVP: Cleaning up development environment..."
-    @uv pip uninstall -y {{package}}
     @rm -rf {{venv_dir}}
     @echo "✨ Environment cleaned successfully!"
 
