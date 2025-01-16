@@ -3,42 +3,42 @@ set -e  # Exit on error
 
 case "$1" in
   "ingest")
-    python -m pipeline.ingest.run
+    uv run python -m pipeline.ingest.run
     ;;
   "transform")
     cd sqlMesh
-    sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
+    uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     ;;
   "transform_dry_run")
     export RAW_DATA_DIR=/app/data/raw
 
     echo "Start local ingestion"
-    python -m pipeline.ingest.run
+    uv run python -m pipeline.ingest.run
     echo "End ingestion"
 
     echo "Start sqlMesh"
     cd sqlMesh
-    sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
+    uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
     ;;
   "ui")
     cd sqlMesh
-    sqlmesh ui --port "${UI_PORT:-8080}"
+    uv run sqlmeshui --port "${UI_PORT:-8080}"
     ;;
   "etl")
     echo "Starting pipeline"
 
     echo "Start ingestion"
-    python -m pipeline.ingest.run
+    uv run python -m pipeline.ingest.run
     echo "End ingestion"
 
     echo "Start sqlMesh"
     cd sqlMesh
-    sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
+    uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
     ;;
   "config_test")
-    python -m pipeline.config_test
+    uv run python -m pipeline.config_test
     ;;
   *)
     echo "Error: Invalid command '$1'"

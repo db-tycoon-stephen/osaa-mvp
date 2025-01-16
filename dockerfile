@@ -8,7 +8,9 @@ RUN mkdir -p datalake/raw sqlMesh
 
 # Copy requirements first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install uv
+RUN uv venv
+RUN uv pip install --no-cache-dir -r requirements.txt
 
 # Copy only necessary files
 COPY src/ src/
