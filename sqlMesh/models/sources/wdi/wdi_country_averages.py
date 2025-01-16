@@ -22,7 +22,7 @@ COLUMN_SCHEMA = {
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
-    # post_statements=[exp.func("upload_to_s3")],
+    post_statements=["@s3_write()"]
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     wdi = generate_ibis_table(

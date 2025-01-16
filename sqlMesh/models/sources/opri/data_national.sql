@@ -16,7 +16,7 @@ MODEL (
     *
   FROM
     read_parquet(
-        @s3_landing_path('edu/OPRI_DATA_NATIONAL')
+        @s3_read('edu/OPRI_DATA_NATIONAL')
     );
 
--- @upload_to_s3();
+@s3_write();
