@@ -83,3 +83,24 @@ def get_s3_path(subfolder_filename: Union[str, str]) -> str:
     
     path = f's3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet'
     return path
+
+
+def find_indicator_models():
+    """Find all models ending with _indicators in the sources directory."""
+    indicator_models = []
+    sources_dir = os.path.join(SQLMESH_DIR, "models", "sources")
+    
+    try:
+        for source in os.listdir(sources_dir):
+            source_dir = os.path.join(sources_dir, source)
+            if os.path.isdir(source_dir):
+                indicator_files = [f for f in os.listdir(source_dir) if f.endswith('_indicators.py')]
+                for file in indicator_files:
+                    module_name = f"models.sources.{source}.{file[:-3]}"
+                    indicator_models.append((source, module_name))
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Sources directory not found: {sources_dir}")
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while finding indicator models: {e}")
+    
+    return indicator_models
