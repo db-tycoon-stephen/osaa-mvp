@@ -5,6 +5,10 @@ WORKDIR /app
 # Create necessary directories
 RUN mkdir -p datalake/raw sqlMesh
 
+# Install git for GitHub dependencies
+RUN apt-get update && \
+    apt-get install -y git && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
