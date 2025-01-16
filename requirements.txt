@@ -34,10 +34,3 @@ s3fs>=2024.2.0
 
 # Database Connections
 psycopg2-binary==2.9.9
-
-# Safety Dependency Checking
-safety==3.2.14
-types-freezegun
-types-python-dateutil
-types-PyYAML
-types-requests
