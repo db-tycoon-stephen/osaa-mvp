@@ -26,14 +26,14 @@ COLUMN_SCHEMA = {
 def entrypoint(evaluator: MacroEvaluator) -> str:
     # Find all indicator models
     indicator_models = find_indicator_models()
-    
+
     # Import each model and get its table
     tables = []
     for source, module_name in indicator_models:
         try:
             # Dynamically import the module
-            module = __import__(module_name, fromlist=['COLUMN_SCHEMA'])
-            
+            module = __import__(module_name, fromlist=["COLUMN_SCHEMA"])
+
             # Generate table for this source
             table = generate_ibis_table(
                 evaluator,
@@ -47,10 +47,10 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
             raise ImportError(f"Could not import module: {module_name}")
         except AttributeError:
             raise AttributeError(f"Module {module_name} does not have COLUMN_SCHEMA")
-    
+
     # Union all tables
     if not tables:
         raise ValueError("No indicator models found")
-    
+
     unioned_t = ibis.union(*tables).order_by(["year", "country_id", "indicator_id"])
     return ibis.to_sql(unioned_t)

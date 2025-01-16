@@ -5,7 +5,7 @@ import os
 from typing import Union
 
 
-def convert_duckdb_type_to_ibis(duckdb_type):
+def _convert_duckdb_type_to_ibis(duckdb_type):
     # Convert to string and uppercase for consistency
     type_str = str(duckdb_type).upper()
 
@@ -29,7 +29,7 @@ def convert_duckdb_type_to_ibis(duckdb_type):
 @macro()
 def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folder):
     """Get schema from a SQL model file.
-    
+
     Args:
         evaluator: SQLMesh evaluator instance
         sql_file_name: Name of the SQL file without extension
@@ -58,7 +58,7 @@ def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folde
 
     # Convert list of tuples to dictionary
     columns_dict = {
-        name.strip().lower(): convert_duckdb_type_to_ibis(str(col_type))
+        name.strip().lower(): _convert_duckdb_type_to_ibis(str(col_type))
         for name, col_type in columns
     }
 
@@ -69,19 +69,19 @@ def get_s3_path(subfolder_filename: Union[str, str]) -> str:
     """
     Constructs an S3 path based on environment variables and the provided subfolder/filename.
     """
-    bucket = os.environ.get('S3_BUCKET_NAME', 'osaa-mvp')
-    target = os.environ.get('TARGET', 'prod').lower()
-    username = os.environ.get('USERNAME', 'default').lower()
-    
+    bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
+    target = os.environ.get("TARGET", "prod").lower()
+    username = os.environ.get("USERNAME", "default").lower()
+
     if target == "prod":
         env_path = target
     else:
         env_path = f"{target}_{username}"
-    
+
     if not isinstance(subfolder_filename, str):
         subfolder_filename = str(subfolder_filename).strip("'")
-    
-    path = f's3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet'
+
+    path = f"s3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet"
     return path
 
 
@@ -89,12 +89,14 @@ def find_indicator_models():
     """Find all models ending with _indicators in the sources directory."""
     indicator_models = []
     sources_dir = os.path.join(SQLMESH_DIR, "models", "sources")
-    
+
     try:
         for source in os.listdir(sources_dir):
             source_dir = os.path.join(sources_dir, source)
             if os.path.isdir(source_dir):
-                indicator_files = [f for f in os.listdir(source_dir) if f.endswith('_indicators.py')]
+                indicator_files = [
+                    f for f in os.listdir(source_dir) if f.endswith("_indicators.py")
+                ]
                 for file in indicator_files:
                     module_name = f"models.sources.{source}.{file[:-3]}"
                     indicator_models.append((source, module_name))
@@ -102,5 +104,5 @@ def find_indicator_models():
         raise FileNotFoundError(f"Sources directory not found: {sources_dir}")
     except Exception as e:
         raise RuntimeError(f"An error occurred while finding indicator models: {e}")
-    
+
     return indicator_models
