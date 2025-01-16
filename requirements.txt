@@ -6,9 +6,6 @@ fsspec>=2024.2.0
 git+https://github.com/ibis-project/ibis.git@bd30ba5#egg=ibis-framework[duckdb]
 sqlfluff==3.0.0
 sqlglot==26.2.1
-
-# Type Checking
-mypy-extensions==1.0.0
 numpy==1.26.4  # Pinning to numpy 1.x for compatibility
 pandas<3.0.0  # Ensuring pandas is compatible with numpy 1.x
 python-dotenv>=1.0.1
