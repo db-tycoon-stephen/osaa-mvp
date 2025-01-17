@@ -12,5 +12,7 @@ MODEL (
     *
   FROM
     read_parquet(
-        @s3_landing_path('edu/OPRI_LABEL')
-    )
+        @s3_read('edu/OPRI_LABEL')
+    );
+
+@s3_write();

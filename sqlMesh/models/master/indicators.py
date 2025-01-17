@@ -21,7 +21,11 @@ COLUMN_SCHEMA = {
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
+    post_statements=["@s3_write()"]
 )
+
+
+
 def entrypoint(evaluator: MacroEvaluator) -> str:
     indicator_models = find_indicator_models(
         [

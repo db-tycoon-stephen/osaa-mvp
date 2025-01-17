@@ -2,7 +2,9 @@ from sqlmesh import macro
 import re
 from constants import SQLMESH_DIR
 import os
-from typing import Union, List, Optional
+from sqlmesh.core.macros import macro, MacroEvaluator
+from sqlglot import exp
+import typing as t, List, Optional
 
 
 def _convert_duckdb_type_to_ibis(duckdb_type):
@@ -65,24 +67,87 @@ def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folde
     return columns_dict
 
 
-def get_s3_path(subfolder_filename: Union[str, str]) -> str:
+@macro()
+def s3_read(
+    evaluator: t.Any, subfolder_filename: t.Union[str, exp.Expression]
+) -> exp.Literal:
+    """Generate S3 path for reading data from the landing zone.
+
+    Args:
+        evaluator: SQLMesh macro evaluator
+        subfolder_filename: Subfolder and filename without extension (e.g. 'edu/OPRI_LABEL')
+
+    Returns:
+        S3 path as SQLGlot string literal
+        Example: 's3://bucket/dev/dev_user/landing/edu/OPRI_LABEL.parquet'
+
+    Environment:
+        S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
+        TARGET (str): prod or dev (default: "dev")
+        USERNAME (str): Used in dev paths (default: "default")
     """
-    Constructs an S3 path based on environment variables and the provided subfolder/filename.
-    """
-    bucket = os.environ.get("S3_BUCKET_NAME", "osaa-mvp")
-    target = os.environ.get("TARGET", "prod").lower()
+    bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
+    target = os.environ.get("TARGET", "dev").lower()
     username = os.environ.get("USERNAME", "default").lower()
 
-    if target == "prod":
-        env_path = target
-    else:
-        env_path = f"{target}_{username}"
+    # Construct the environment path segment
+    env_path = target if target == "prod" else f"dev/{target}_{username}"
 
-    if not isinstance(subfolder_filename, str):
+    # Convert input to string if it's a SQLGlot expression
+    if isinstance(subfolder_filename, exp.Expression):
         subfolder_filename = str(subfolder_filename).strip("'")
 
     path = f"s3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet"
-    return path
+    return exp.Literal.string(path)
+
+
+@macro()
+def s3_write(evaluator: MacroEvaluator) -> str:
+    """Generate COPY statement for writing model data to the staging zone.
+
+    Args:
+        evaluator: SQLMesh macro evaluator containing model context
+
+    Returns:
+        DuckDB COPY statement
+        Example: COPY (SELECT * FROM table) TO 's3://bucket/dev/staging/source/table.parquet'
+
+    Environment:
+        S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
+        TARGET (str): prod or dev (default: "dev")
+        USERNAME (str): Used in dev paths (default: "default")
+
+    Note: Handles SQLMesh physical table names by removing hash suffixes and comments.
+    """
+
+    # Get environment variables
+    bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
+    target = os.environ.get("TARGET", "dev").lower()
+    username = os.environ.get("USERNAME", "default").lower()
+
+    # Construct environment path
+    env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+
+    # Get and parse model name
+    this_model = str(evaluator.locals.get("this_model", ""))
+
+    # Extract schema and determine schema path
+    schema = this_model.split(".")[1].strip('"')
+    schema_path = "master" if schema == "master" else "source"
+
+    # Extract and clean table name
+    table = this_model.split(".")[2].strip('"')  # Remove surrounding quotes
+    table = table.split()[0]  # Remove any comments
+    if "__" in table:
+        table = table.rsplit("__", 1)[0]  # Remove hash suffix
+
+    # Construct S3 path
+    s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{table}.parquet"
+
+    # Build the SQL statement
+    sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
+
+    return sql
 
 
 def find_indicator_models(selected_models: Optional[List[str]] = None) -> List[tuple]:
