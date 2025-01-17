@@ -57,7 +57,7 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
     )
 
     wdi = (
-        wdi_data.join(
+        wdi_data.left_join(
             wdi_series_renamed,
             "indicator_id"
         )
