@@ -4,7 +4,7 @@ from constants import SQLMESH_DIR
 import os
 from sqlmesh.core.macros import macro, MacroEvaluator
 from sqlglot import exp
-import typing as t, List, Optional
+import typing as t
 
 
 def _convert_duckdb_type_to_ibis(duckdb_type):
@@ -150,7 +150,9 @@ def s3_write(evaluator: MacroEvaluator) -> str:
     return sql
 
 
-def find_indicator_models(selected_models: Optional[List[str]] = None) -> List[tuple]:
+def find_indicator_models(
+    selected_models: t.Optional[t.List[str]] = None,
+) -> t.List[t.Tuple[str, str]]:
     """Find all models ending with _indicators in the sources directory.
 
     Args:
