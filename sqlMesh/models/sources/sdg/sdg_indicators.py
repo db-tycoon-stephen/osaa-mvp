@@ -23,28 +23,28 @@ COLUMN_SCHEMA = {
     kind="FULL",
     columns=COLUMN_SCHEMA,
     post_statements=["@s3_write()"],
-    description="""
-    This model contains Sustainable Development Goals (SDG) data for all countries and indicators.
-    Publishing Org: UN
-    Link to raw data: https://unstats.un.org/sdgs/dataportal
-    Dataset owner:
-        Name: UN
-        Contact info: https://unstats.un.org/sdgs/contact-us/
-    Funding Source: 
-    Maintenance Status: Actively Maintained
-    How data was collected: https://unstats.un.org/sdgs/dataContacts/
-    Update Cadence: Annually
-    Transformations of raw data (column renaming, type casting, etc): indicator labels and descriptions are joined together
-    Column descriptions:
-        indicator_id: The unique identifier for the indicator
-        country_id: The unique identifier for the country
-        year: The year of the data
-        value: The value of the indicator for the country and year
-        magnitude: The magnitude of the indicator for the country and year
-        qualifier: The qualifier of the indicator for the country and year
-        indicator_description: The description of the indicator
-    Primary Key: indicator_id, country_id, year
-    """,
+    description="""This model contains Sustainable Development Goals (SDG) data for all countries and indicators.""",
+    column_descriptions={
+        "indicator_id": "The unique identifier for the indicator",
+        "country_id": "The unique identifier for the country",
+        "year": "The year of the data",
+        "value": "The value of the indicator for the country and year",
+        "magnitude": "The magnitude of the indicator for the country and year",
+        "qualifier": "The qualifier of the indicator for the country and year",
+        "indicator_description": "The description of the indicator",
+    },
+    grain=("indicator_id", "country_id", "year"),
+    virtual_properties={
+        "publishing org": "UN",
+        "link_to_raw_data": "https://unstats.un.org/sdgs/dataportal",
+        "dataset_owner": "UN",
+        "dataset_owner_contact_info": "https://unstats.un.org/sdgs/contact-us/",
+        "funding_source": "UN",
+        "maintenance_status": "Actively Maintained",
+        "how_data_was_collected": "https://unstats.un.org/sdgs/dataContacts/",
+        "update_cadence": "Annually",
+        "transformations_of_raw_data": "indicator labels and descriptions are joined together",
+    },
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     source_folder_path = "sdg"
