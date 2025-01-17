@@ -19,6 +19,7 @@ default:
 install:
     @echo "🚀 OSAA MVP: Setting up development environment..."
     @echo "   Creating virtual environment in {{venv_dir}}..."
+    @pip install uv
     @uv venv {{venv_dir}}
     @echo "   Upgrading pip..."
     @uv pip install --upgrade pip

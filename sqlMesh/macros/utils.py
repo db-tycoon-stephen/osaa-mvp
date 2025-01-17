@@ -7,7 +7,7 @@ from sqlglot import exp
 import typing as t
 
 
-def convert_duckdb_type_to_ibis(duckdb_type):
+def _convert_duckdb_type_to_ibis(duckdb_type):
     # Convert to string and uppercase for consistency
     type_str = str(duckdb_type).upper()
 
@@ -31,7 +31,7 @@ def convert_duckdb_type_to_ibis(duckdb_type):
 @macro()
 def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folder):
     """Get schema from a SQL model file.
-    
+
     Args:
         evaluator: SQLMesh evaluator instance
         sql_file_name: Name of the SQL file without extension
@@ -60,7 +60,7 @@ def get_sql_model_schema(evaluator, sql_file_name, folder_path_from_models_folde
 
     # Convert list of tuples to dictionary
     columns_dict = {
-        name.strip().lower(): convert_duckdb_type_to_ibis(str(col_type))
+        name.strip().lower(): _convert_duckdb_type_to_ibis(str(col_type))
         for name, col_type in columns
     }
 
@@ -119,7 +119,7 @@ def s3_write(evaluator: MacroEvaluator) -> str:
 
     Note: Handles SQLMesh physical table names by removing hash suffixes and comments.
     """
-    
+
     # Get environment variables
     bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
     target = os.environ.get("TARGET", "dev").lower()
@@ -129,22 +129,55 @@ def s3_write(evaluator: MacroEvaluator) -> str:
     env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
 
     # Get and parse model name
-    this_model = str(evaluator.locals.get('this_model', ''))
-    
+    this_model = str(evaluator.locals.get("this_model", ""))
+
     # Extract schema and determine schema path
-    schema = this_model.split('.')[1].strip('"')
+    schema = this_model.split(".")[1].strip('"')
     schema_path = "master" if schema == "master" else "source"
-    
+
     # Extract and clean table name
-    table = this_model.split('.')[2].strip('"')  # Remove surrounding quotes
+    table = this_model.split(".")[2].strip('"')  # Remove surrounding quotes
     table = table.split()[0]  # Remove any comments
     if "__" in table:
         table = table.rsplit("__", 1)[0]  # Remove hash suffix
-    
+
     # Construct S3 path
     s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{table}.parquet"
-    
+
     # Build the SQL statement
     sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
 
     return sql
+
+
+def find_indicator_models(
+    selected_models: t.Optional[t.List[str]] = None,
+) -> t.List[t.Tuple[str, str]]:
+    """Find all models ending with _indicators in the sources directory.
+
+    Args:
+        selected_models: Optional list of model names to include (e.g., ['opri']).
+                         If None, all models are included.
+                         If a model name is not found, it will be skipped.
+    """
+    indicator_models = []
+    sources_dir = os.path.join(SQLMESH_DIR, "models", "sources")
+
+    try:
+        for source in os.listdir(sources_dir):
+            source_dir = os.path.join(sources_dir, source)
+            if os.path.isdir(source_dir):
+                indicator_files = [
+                    f for f in os.listdir(source_dir) if f.endswith("_indicators.py")
+                ]
+                for file in indicator_files:
+                    module_name = f"models.sources.{source}.{file[:-3]}"
+                    # Check if the module_name is in the selected_models list
+                    if selected_models is None or source in selected_models:
+                        indicator_models.append((source, module_name))
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Sources directory not found: {sources_dir}")
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while finding indicator models: {e}")
+
+    return indicator_models
