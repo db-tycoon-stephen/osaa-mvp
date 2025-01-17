@@ -16,5 +16,7 @@ MODEL (
     *
   FROM
     read_parquet(
-        @s3_landing_path('edu/SDG_DATA_NATIONAL')
-    )
+        @s3_read('edu/SDG_DATA_NATIONAL')
+    );
+
+@s3_write();

@@ -4,7 +4,7 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh import model
 from macros.ibis_expressions import generate_ibis_table
 from macros.utils import get_sql_model_schema
-
+from sqlglot import exp
 
 COLUMN_SCHEMA = {
     "country_id": "String",
@@ -22,6 +22,7 @@ COLUMN_SCHEMA = {
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
+    post_statements=["@s3_write()"]
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     """Process WDI data and return the transformed Ibis table."""
