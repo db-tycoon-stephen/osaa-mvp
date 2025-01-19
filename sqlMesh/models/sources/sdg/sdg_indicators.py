@@ -34,8 +34,8 @@ COLUMN_SCHEMA = {
         "indicator_description": "The description of the indicator",
     },
     grain=("indicator_id", "country_id", "year"),
-    virtual_properties={
-        "publishing org": "UN",
+    physical_properties={
+        "publishing_org": "UN",
         "link_to_raw_data": "https://unstats.un.org/sdgs/dataportal",
         "dataset_owner": "UN",
         "dataset_owner_contact_info": "https://unstats.un.org/sdgs/contact-us/",
