@@ -28,6 +28,10 @@ case "$1" in
   "etl")
     echo "Starting pipeline"
 
+    # Download DB from S3 (or create new if doesn't exist)
+    echo "Downloading DB from S3..."
+    uv run python -m pipeline.s3_sync.run download
+
     echo "Start ingestion"
     uv run python -m pipeline.ingest.run
     echo "End ingestion"
@@ -36,6 +40,11 @@ case "$1" in
     cd sqlMesh
     uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
+
+    # Upload updated DB back to S3
+    cd ..  # Return to root directory
+    echo "Uploading DB to S3..."
+    uv run python -m pipeline.s3_sync.run upload
     ;;
   "config_test")
     uv run python -m pipeline.config_test

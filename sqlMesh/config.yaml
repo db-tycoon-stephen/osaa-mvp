@@ -2,14 +2,14 @@ gateways:
   local:
     connection:
       type: duckdb
-      database: osaa_mvp.db
+      database: unosaa_data_pipeline.db
       # Configure DuckDB with httpfs extension for S3 access
       extensions: ['httpfs']
 
   shared_state:
     connection:
       type: duckdb
-      database: osaa_mvp.db
+      database: unosaa_data_pipeline.db
       extensions: ['httpfs']
     state_connection:
       type: postgres

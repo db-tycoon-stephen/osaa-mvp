@@ -62,7 +62,7 @@ flowchart TB
 
 
     %% S3 Bucket Structure
-    subgraph "S3 Bucket (osaa_mvp)"
+    subgraph "S3 Bucket (unosaa-data-pipeline)"
         direction LR
         %% Datalake Folder
         subgraph DLK[datalake/]
