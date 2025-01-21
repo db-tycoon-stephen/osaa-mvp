@@ -120,34 +120,44 @@ def s3_write(evaluator: MacroEvaluator) -> str:
     Note: Handles SQLMesh physical table names by removing hash suffixes and comments.
     """
 
-    # Get environment variables
-    bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
-    target = os.environ.get("TARGET", "dev").lower()
-    username = os.environ.get("USERNAME", "default").lower()
+    # Handling the dynamic nature of the schema/table name in sqlmesh
+    # It changes depending on the runtime stage. 
+    if evaluator.locals.get("runtime_stage") != "loading":
+       
+        # Get environment variables
+        bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
+        target = os.environ.get("TARGET", "dev").lower()
+        username = os.environ.get("USERNAME", "default").lower()
 
-    # Construct environment path
-    env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+        # Construct environment path
+        env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
 
-    # Get and parse model name
-    this_model = str(evaluator.locals.get("this_model", ""))
+        # Get and parse model name
+        this_model = str(evaluator.locals.get("this_model", ""))
 
-    # Extract schema and determine schema path
-    schema = this_model.split(".")[1].strip('"')
-    schema_path = "master" if schema == "master" else "source"
+        # Extract and clean schema and table name
+        # schema = this_model.split(".")[1].strip('"')
+        # print('schema: ', schema)
+        # schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
+        # print('schema_path: ', schema_path)
+        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]  # Remove surrounding quotes # Remove any comments, Remove hash suffix
+        print('full_table_name: ', full_table_name)
+        schema = full_table_name.split("__")[0]
+        schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
+        print('schema_path: ', schema_path)
+        dir = schema + "/" if schema != schema_path else ""  # Extract dir suffix
+        table_name = full_table_name.split("__")[1]  #  Extract file name
+        print('dir: ', dir)
+        print('table_name: ', table_name)
 
-    # Extract and clean table name
-    table = this_model.split(".")[2].strip('"')  # Remove surrounding quotes
-    table = table.split()[0]  # Remove any comments
-    if "__" in table:
-        table = table.rsplit("__", 1)[0]  # Remove hash suffix
+        # Construct S3 path
+        s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
+        print('s3_path: ', s3_path)
 
-    # Construct S3 path
-    s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{table}.parquet"
+        # Build the SQL statement
+        sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
 
-    # Build the SQL statement
-    sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
-
-    return sql
+        return sql
 
 
 def find_indicator_models(
