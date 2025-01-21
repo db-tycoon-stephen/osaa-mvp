@@ -136,19 +136,11 @@ def s3_write(evaluator: MacroEvaluator) -> str:
         this_model = str(evaluator.locals.get("this_model", ""))
 
         # Extract and clean schema and table name
-        # schema = this_model.split(".")[1].strip('"')
-        # print('schema: ', schema)
-        # schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
-        # print('schema_path: ', schema_path)
         full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]  # Remove surrounding quotes # Remove any comments, Remove hash suffix
-        print('full_table_name: ', full_table_name)
         schema = full_table_name.split("__")[0]
         schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
-        print('schema_path: ', schema_path)
         dir = schema + "/" if schema != schema_path else ""  # Extract dir suffix
         table_name = full_table_name.split("__")[1]  #  Extract file name
-        print('dir: ', dir)
-        print('table_name: ', table_name)
 
         # Construct S3 path
         s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
