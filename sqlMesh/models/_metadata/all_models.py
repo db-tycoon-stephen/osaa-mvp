@@ -2,9 +2,7 @@ import ibis
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import model
 from constants import DB_PATH
-import os
 
-os.environ["PYTHONWARNINGS"] = "ignore"
 
 COLUMN_SCHEMA = {
     "model_name": "String",
@@ -28,9 +26,9 @@ COLUMN_SCHEMA = {
 def entrypoint(evaluator: MacroEvaluator) -> str:
     """
     This model is used to get the model properties of the latest snapshot.
-    The user may see the following warning the first time they run the project, but they can safely ignore it: 
+    The user may see the following warning the first time they run the project, but they can safely ignore it:
     ```
-    2025-01-21 20:39:23,269 - MainThread - sqlmesh.core.renderer - WARNING - SELECT * cannot be expanded due to missing schema(s) for model(s): '"unbound_table_1"'. 
+    2025-01-21 20:39:23,269 - MainThread - sqlmesh.core.renderer - WARNING - SELECT * cannot be expanded due to missing schema(s) for model(s): '"unbound_table_1"'.
     Run `sqlmesh create_external_models` and / or make sure that the model '"osaa_mvp"."_metadata"."all_models"' can be rendered at parse time. (renderer.py:540)
     ```
     """
