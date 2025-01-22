@@ -134,17 +134,17 @@ def s3_write(evaluator: MacroEvaluator) -> str:
 
         # Get and parse model name
         this_model = str(evaluator.locals.get("this_model", ""))
+        print(this_model)
 
         # Extract and clean schema and table name
-        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]  # Remove surrounding quotes # Remove any comments, Remove hash suffix
-        schema = full_table_name.split("__")[0]
+        # The this_model macro has in the format of "osaa_mvp"."sqlmesh__opri"."opri__data_national__4256542351"
+        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]
+        schema, table_name = full_table_name.split("__", 1)
         schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
-        dir = schema + "/" if schema != schema_path else ""  # Extract dir suffix
-        table_name = full_table_name.split("__")[1]  #  Extract file name
+        dir = schema + "/" if schema != schema_path else ""
 
         # Construct S3 path
         s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
-        print('s3_path: ', s3_path)
 
         # Build the SQL statement
         sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
