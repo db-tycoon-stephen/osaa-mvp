@@ -23,7 +23,7 @@ case "$1" in
     ;;
   "ui")
     cd sqlMesh
-    uv run sqlmeshui --port "${UI_PORT:-8080}"
+    uv run sqlmesh ui --port "${UI_PORT:-8080}"
     ;;
   "etl")
     echo "Starting pipeline"

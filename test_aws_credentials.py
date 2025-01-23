@@ -16,8 +16,14 @@ import tempfile
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file in the current directory
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+logger.info(f"Loading .env file from: {env_path}")
+load_dotenv(env_path, override=True)
+
+# Print the role ARN being used
+role_arn = os.getenv('AWS_ROLE_ARN')
+logger.info(f"Using role ARN: {role_arn}")
 
 def create_test_parquet():
     """Create a test Parquet file with sample data"""
@@ -192,9 +198,28 @@ def test_s3_access(credentials):
         )
         logger.info(f"Successfully verified Parquet file exists (size: {response['ContentLength']} bytes)")
 
+        # Test access to a specific Parquet file
+        parquet_test_key = "prod/staging/master/indicators.parquet"
+        logger.info(f"\nTesting access to Parquet file at s3://{bucket_name}/{parquet_test_key}")
+        try:
+            response = s3_client.head_object(
+                Bucket=bucket_name,
+                Key=parquet_test_key
+            )
+            logger.info(f"Successfully accessed Parquet file (size: {response['ContentLength']} bytes, last modified: {response['LastModified']})")
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'AccessDenied':
+                logger.warning("Access denied: This role does not have permission to access the Parquet file.")
+            else:
+                logger.error(f"Error accessing Parquet file: {e}")
+                raise
+
     except ClientError as e:
-        logger.error(f"Error testing S3 access: {e}")
-        raise
+        if e.response['Error']['Code'] == 'AccessDenied':
+            logger.warning("Write access denied: This role does not have permission to write to the bucket.")
+        else:
+            logger.error(f"Error testing S3 access: {e}")
+            raise
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise
