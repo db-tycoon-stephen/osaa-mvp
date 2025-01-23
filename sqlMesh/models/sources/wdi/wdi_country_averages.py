@@ -21,8 +21,7 @@ COLUMN_SCHEMA = {
     "sources.wdi_country_averages",
     is_sql=True,
     kind="FULL",
-    columns=COLUMN_SCHEMA,
-    post_statements=["@s3_write()"]
+    columns=COLUMN_SCHEMA
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     wdi = generate_ibis_table(
