@@ -49,6 +49,11 @@ def sync_db_with_s3(operation: str, db_path: str, bucket_name: str, s3_key: str)
                     raise S3OperationError(f"Error checking S3 object: {str(e)}")
                     
         elif operation == "upload":
+            # Only allow uploads in prod/qa environments
+            if os.getenv('TARGET', '').lower() not in ['prod', 'qa']:
+                logger.warning("Upload operation restricted to prod/qa targets only")
+                return
+                
             logger.info("Uploading DB to S3...")
             if os.path.exists(db_path):
                 s3_client.upload_file(db_path, bucket_name, s3_key)
