@@ -61,7 +61,7 @@ jobs:
           -e POSTGRES_USER=$POSTGRES_USER \
           -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
           -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
-          osaa-mvp etl dev_github_ci
+          osaa-mvp transform_dry_run dev_github_ci
 
     - name: Check Container Status
       run: |
