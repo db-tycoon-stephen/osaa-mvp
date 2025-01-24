@@ -15,4 +15,4 @@ import os
 SQLMESH_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Use environment variable with fallback to local path
-DB_PATH = os.getenv("DB_PATH", os.path.join(SQLMESH_DIR, "osaa_mvp.db"))
+DB_PATH = os.getenv("DB_PATH", os.path.join(SQLMESH_DIR, "unosaa_data_pipeline.db"))

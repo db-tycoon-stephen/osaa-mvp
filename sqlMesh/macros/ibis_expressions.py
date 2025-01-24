@@ -8,7 +8,7 @@ def generate_ibis_table(
     table_name: str,
     schema_name: str,
     column_schema: dict,
-    catalog_name: str = "osaa_mvp",
+    catalog_name: str = "unosaa_data_pipeline",
 ):
     """
     This macro generates an ibis table expression based on the provided parameters.

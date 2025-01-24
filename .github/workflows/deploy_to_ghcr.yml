@@ -13,11 +13,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -46,9 +41,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
-        POSTGRES_DATABASE: ${{ secrets.POSTGRES_DB || 'postgres' }}
         USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
-        POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
       run: |
         docker run --name osaa-mvp \
           -e TARGET=$TARGET \
@@ -59,11 +52,6 @@ jobs:
           -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
           -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
           -e USERNAME=$USERNAME \
-          -e POSTGRES_HOST=$POSTGRES_HOST \
-          -e POSTGRES_PORT=$POSTGRES_PORT \
-          -e POSTGRES_USER=$POSTGRES_USER \
-          -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-          -e POSTGRES_DATABASE=$POSTGRES_DATABASE \
           osaa-mvp etl dev_github_deploy
       continue-on-error: true
 

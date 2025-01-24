@@ -151,13 +151,6 @@ Note: After installing Docker Desktop, you'll need to start the application befo
 
    **Database Connection:**
    ```bash
-   # PostgreSQL database for tracking data transformations
-   POSTGRES_HOST=<host>               # Database server address
-   POSTGRES_PORT=5432                 # Database connection port
-   POSTGRES_USER=<user>              # Database login username
-   POSTGRES_PASSWORD=<password>       # Database login password
-   POSTGRES_DATABASE=<database>       # Name of the database to use
-
    # Pipeline state management
    GATEWAY=shared_state              # Controls where transformation state is stored
                                     # Options: shared_state (PostgreSQL), local (DuckDB)
@@ -347,7 +340,7 @@ osaa-mvp/
 ├── scratchpad/                # Temporary space for working code or notes
 ├── sqlMesh/                   # SQLMesh configuration and models
 │   ├── models/                # SQLMesh model definitions
-│   └── osaa_mvp.db            # DuckDB database for SQLMesh transformations
+│   └── unosaa_data_pipeline.db            # DuckDB database for SQLMesh transformations
 ├── src/
 │   └── pipeline/             # Core pipeline code
 │       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
