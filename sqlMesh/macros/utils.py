@@ -90,14 +90,11 @@ def s3_read(
     target = os.environ.get("TARGET", "dev").lower()
     username = os.environ.get("USERNAME", "default").lower()
 
-    # Construct the environment path segment
-    env_path = target if target == "prod" else f"dev/{target}_{username}"
-
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
         subfolder_filename = str(subfolder_filename).strip("'")
 
-    path = f"s3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet"
+    path = f"s3://{bucket}/{target}/landing/{subfolder_filename}.parquet"
     return exp.Literal.string(path)
 
 

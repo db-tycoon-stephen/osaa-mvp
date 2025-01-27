@@ -1,0 +1,44 @@
+name: Promote Dev Landing to Prod on Merge to Main
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  promote-to-prod:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-duration-seconds: 1200
+
+    - name: Sync Dev Landing to Prod Landing
+      id: sync
+      run: |
+        echo "Syncing dev/landing to prod/landing..."
+        aws s3 sync \
+          s3://${S3_BUCKET_NAME}/dev/landing/ \
+          s3://${S3_BUCKET_NAME}/prod/landing/ \
+          --delete
+
+    - name: Verify Sync
+      run: |
+        echo "Verifying sync operation..."
+        aws s3 ls s3://${S3_BUCKET_NAME}/prod/landing/ --recursive
