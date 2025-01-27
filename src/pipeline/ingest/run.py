@@ -220,10 +220,7 @@ class Ingest:
 
                 # Construct S3 path
                 logger.info(f"Constructing S3 path with TARGET={TARGET}, USERNAME={USERNAME}")
-                if TARGET == "prod":
-                    s3_file_path = f"s3://{S3_BUCKET_NAME}/prod/landing/{s3_sub_folder}/{file_name_pq}"
-                else:
-                    s3_file_path = f"s3://{S3_BUCKET_NAME}/dev/landing/{s3_sub_folder}/{file_name_pq}"
+                s3_file_path = f"s3://{S3_BUCKET_NAME}/{TARGET}/landing/{s3_sub_folder}/{file_name_pq}"
                 
                 logger.info(s3_file_path)
 
