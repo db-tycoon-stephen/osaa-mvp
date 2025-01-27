@@ -15,6 +15,12 @@ jobs:
   promote-to-prod:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    steps:
+      - name: Debug Event
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event type: ${{ github.event.type }}"
+          echo "Is PR merged: ${{ github.event.pull_request.merged }}"
     outputs:
       promotion_status: ${{ job.status }}
     env:
