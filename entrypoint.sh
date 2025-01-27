@@ -11,6 +11,7 @@ case "$1" in
     ;;
   "transform_dry_run")
     export RAW_DATA_DIR=/app/data/raw
+    export DRY_RUN_FLG=true
 
     echo "Start local ingestion"
     uv run python -m pipeline.ingest.run

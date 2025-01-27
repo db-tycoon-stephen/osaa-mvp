@@ -113,9 +113,15 @@ def s3_write(evaluator: MacroEvaluator) -> str:
         S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
         TARGET (str): prod or dev (default: "dev")
         USERNAME (str): Used in dev paths (default: "default")
+        DRY_RUN_FLG (str): Enable/disable dry run (default: "false")
 
     Note: Handles SQLMesh physical table names by removing hash suffixes and comments.
     """
+
+    # Check if dry run is enabled
+    dry_run_flg = os.environ.get("DRY_RUN_FLG", "false").lower() == "true"
+    if dry_run_flg:
+        return None  # Return empty string to skip S3 upload
 
     # Handling the dynamic nature of the schema/table name in sqlmesh
     # It changes depending on the runtime stage. 
