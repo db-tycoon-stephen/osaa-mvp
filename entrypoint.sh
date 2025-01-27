@@ -45,6 +45,11 @@ case "$1" in
   "config_test")
     uv run python -m pipeline.config_test
     ;;
+  "promote")
+    echo "Starting promotion from dev to prod..."
+    uv run python -m pipeline.s3_promote.run
+    echo "Promotion completed"
+    ;;
   *)
     echo "Error: Invalid command '$1'"
     echo
