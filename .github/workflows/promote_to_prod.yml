@@ -18,27 +18,58 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-
     steps:
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_DEFAULT_REGION }}
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        role-duration-seconds: 1200
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-    - name: Sync Dev Landing to Prod Landing
-      id: sync
-      run: |
-        echo "Syncing dev/landing to prod/landing..."
-        aws s3 sync \
-          s3://${S3_BUCKET_NAME}/dev/landing/ \
-          s3://${S3_BUCKET_NAME}/prod/landing/ \
-          --delete
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    - name: Verify Sync
+    - name: Build Docker Container
+      run: docker build -t osaa-mvp .
+
+    - name: Run Container with Promote
+      id: run-container
+      env:
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+        AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
       run: |
-        echo "Verifying sync operation..."
-        aws s3 ls s3://${S3_BUCKET_NAME}/prod/landing/ --recursive
+        docker run --name osaa-mvp \
+          -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
+          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+          -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+          -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
+          osaa-mvp promote
+
+    - name: Check Container Status
+      run: |
+        container_status=$(docker inspect --format='{{.State.Status}}' osaa-mvp)
+        exit_code=$(docker inspect --format='{{.State.ExitCode}}' osaa-mvp)
+        error_log=$(docker logs osaa-mvp 2>&1)
+        
+        echo "Container Status: $container_status"
+        echo "Exit Code: $exit_code"
+        
+        if [ "$container_status" != "exited" ]; then
+          echo "Error: Container did not complete execution"
+          echo "$error_log"
+          exit 1
+        fi
+        
+        if [ "$exit_code" -ne 0 ]; then
+          echo "Error: Container exited with non-zero status code"
+          echo "$error_log"
+          exit 1
+        fi
+        
+        echo "Container ran successfully"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker stop osaa-mvp || true
+        docker rm osaa-mvp || true
