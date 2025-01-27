@@ -32,10 +32,6 @@ case "$1" in
     echo "Downloading DB from S3..."
     uv run python -m pipeline.s3_sync.run download
 
-    echo "Start ingestion"
-    uv run python -m pipeline.ingest.run
-    echo "End ingestion"
-
     echo "Start sqlMesh"
     cd sqlMesh
     uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
