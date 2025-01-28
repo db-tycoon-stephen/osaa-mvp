@@ -132,13 +132,47 @@ docker compose run --rm pipeline transform # Only run transformations
 
 To add a new dataset:
 
-1. **Prepare Your Data**
+1. **Stage Your Data in the local upload folder**
    - Save your CSV file in `data/raw/<source_name>/`
    - Ensure the data follows the required format
 
-2. **Run the Pipeline**
+2. **Intake the data into SQLMesh with a source model**
+   - Create a source model for your new source in SQLMesh: `sqlMesh/models/sources/<source_name>/<source_model_name>.sql`
+
+   Example:
+   ```sql
+   MODEL (
+      name sdg.data_national,
+      kind FULL,
+      cron '@daily',
+      columns (
+         INDICATOR_ID TEXT,
+         COUNTRY_ID TEXT,
+         YEAR INTEGER,
+         VALUE DECIMAL,
+         MAGNITUDE TEXT,
+         QUALIFIER TEXT
+      )
+   );
+
+   SELECT
+      *
+   FROM
+      read_parquet(
+         @s3_read('who/who_life_expectancy.csv')
+      );
+   ```
+   Note:
+   - Indicate the kind of model you want to create (FULL, INCREMENTAL, etc.). Use incremental style for large datasets that will be run frequently.
+   - Define the column schema for the new source.
+
+2. **Add a transformation model**
+   - Create a transformation model (if needed) in SQLMesh using Ibis. Add the model to the same folder as the source model above.
+
+3. **Run the Pipeline**
    ```bash
    # Process your new data
+   docker build -t osaa-mvp .
    docker compose run --rm pipeline etl
    ```
 
