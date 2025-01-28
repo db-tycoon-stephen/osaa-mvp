@@ -166,21 +166,39 @@ To add a new dataset:
    - Indicate the kind of model you want to create (FULL, INCREMENTAL, etc.). Use incremental style for large datasets that will be run frequently.
    - Define the column schema for the new source.
 
-2. **Add a transformation model**
+3. **Add a transformation model**
    - Create a transformation model (if needed) in SQLMesh using Ibis. Add the model to the same folder as the source model above.
 
-3. **Run the Pipeline**
+4. **Run the Pipeline**
    ```bash
    # Process your new data
    docker build -t osaa-mvp .
    docker compose run --rm pipeline etl
    ```
 
-3. **Verify Results**
+5. **Verify Results**
    - Check the S3 bucket for your processed data
    - Review any error messages if the process fails
 
-### 4.3 Development vs Production
+### 4.4 Using SQLMesh UI to Verify Data
+After running the pipeline, you can use the SQLMesh UI to verify the data.
+
+1. **Start the UI**
+   ```bash
+   docker compose --profile ui up ui
+   ```
+
+2. **Access the Interface**
+   - Open `http://localhost:8080` in your browser
+   - Use the Editor tab to inspect individual models and their data
+   - Use the Data Catalog to visualize data lineage and model's documentation
+
+3. **Stop the UI**
+   ```bash
+   # Use Ctrl+C to stop when finished
+   ```
+
+### 4.5 Development vs Production
 
 The pipeline has two main modes:
 - **Development**: Your personal workspace for testing
