@@ -84,11 +84,9 @@ def s3_read(
     Environment:
         S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
         TARGET (str): prod or dev (default: "dev")
-        USERNAME (str): Used in dev paths (default: "default")
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
     target = os.environ.get("TARGET", "dev").lower()
-    username = os.environ.get("USERNAME", "default").lower()
 
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
