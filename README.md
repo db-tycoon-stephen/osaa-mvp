@@ -27,6 +27,7 @@ Here's how to get started with the OSAA Data Pipeline:
 3. **Run the Pipeline**
    ```bash
    # Run the complete pipeline
+   docker compose run --rm pipeline ingest
    docker compose run --rm pipeline etl
    ```
 
@@ -44,7 +45,8 @@ Here's how to get started with the OSAA Data Pipeline:
 
 5. **View Results**
    - Processed data will be available in the S3 bucket
-   - Your development data: `s3://unosaa-data-pipeline/dev/{USERNAME}/...`
+   - Source files: `s3://unosaa-data-pipeline/dev/landing/...`
+   - Your development data: `s3://unosaa-data-pipeline/dev/dev_{USERNAME}/...`
    - Production data: `s3://unosaa-data-pipeline/prod/...`
 
 For detailed instructions and advanced usage, see the sections below.
@@ -121,6 +123,7 @@ The pipeline processes data in three main steps:
 #### Basic Commands
 ```bash
 # Run the complete pipeline
+docker compose run --rm pipeline ingest
 docker compose run --rm pipeline etl
 
 # Run individual steps
@@ -173,6 +176,7 @@ To add a new dataset:
    ```bash
    # Process your new data
    docker build -t osaa-mvp .
+   docker compose run --rm pipeline ingest
    docker compose run --rm pipeline etl
    ```
 
@@ -243,6 +247,8 @@ osaa-mvp/
 │   └── pipeline/             # Core pipeline code
 │       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet
 │       ├── upload/           # Handles DuckDB transformed data upload to S3
+│       ├── s3_sync/          # Handles SQLMesh database files sync with S3
+│       ├── s3_promote/       # Handles data promotion between environments
 │       ├── catalog.py        # Defines data catalog interactions
 │       ├── config.py         # Stores configuration details
 │       ├── utils.py          # Utility functions
@@ -259,19 +265,20 @@ osaa-mvp/
 ```
 s3://osaa-mvp/                 # Base bucket
 │
-├── dev_{username}/           # Development environment
+├── dev/                     # Development environment
 │   ├── landing/             # Landing zone for raw data
-│   └── staging/             # Staging area
-│       ├── source/          # Source data models
-│       └── master/          # Final unified models
+│   └── dev_{username}/      
+|       └── staging/         # Development staging area
+|           ├── _metadata/   # Metadata models
+|           └── master/      # Final unified models
 │
 ├── qa/                      # QA environment
-│   ├── landing/            # QA landing zone
-│   └── staging/            # QA staging area
+│   ├── landing/             # QA landing zone
+│   └── staging/             # QA staging area
 │
 └── prod/                    # Production environment
-    ├── landing/            # Production landing zone
-    └── staging/            # Production staging area
+    ├── landing/             # Production landing zone
+    └── staging/             # Production staging area
 ```
 
 ### 6.4 Source Code Structure
@@ -280,10 +287,14 @@ The `src/pipeline` directory contains the core pipeline commands:
 
 ```
 src/pipeline/
-├── ingest/                 # Handles 'ingest' command
+├── ingest/                # Handles 'ingest' command
 │   └── run.py             # Converts CSVs to Parquet
-├── upload/                 # Handles 'upload' command
+├── upload/                # Handles 'upload' command
 │   └── run.py             # Uploads transformed data
+├── s3_sync/               # Handles 's3_sync' command
+│   └── run.py             # sync SQLMesh database files with S3
+├── s3_promote/            # Handles 's3_promote' command
+│   └── run.py             # Promotes data between environments
 ├── catalog.py             # Manages data locations
 ├── config.py              # Handles configuration
 └── utils.py               # Shared utilities
