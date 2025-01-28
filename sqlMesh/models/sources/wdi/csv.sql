@@ -79,5 +79,3 @@ MODEL (
       read_parquet(
         @s3_read('wdi/WDICSV')
     );
-
-@s3_write();

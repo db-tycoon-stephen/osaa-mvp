@@ -22,7 +22,6 @@ COLUMN_SCHEMA = {
     is_sql=True,
     kind="FULL",
     columns=COLUMN_SCHEMA,
-    post_statements=["@s3_write()"],
     description="""This model contains Sustainable Development Goals (SDG) data for all countries and indicators.""",
     column_descriptions={
         "indicator_id": "The unique identifier for the indicator",

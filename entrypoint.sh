@@ -11,6 +11,7 @@ case "$1" in
     ;;
   "transform_dry_run")
     export RAW_DATA_DIR=/app/data/raw
+    export DRY_RUN_FLG=true
 
     echo "Start local ingestion"
     uv run python -m pipeline.ingest.run
@@ -28,17 +29,27 @@ case "$1" in
   "etl")
     echo "Starting pipeline"
 
-    echo "Start ingestion"
-    uv run python -m pipeline.ingest.run
-    echo "End ingestion"
+    # Download DB from S3 (or create new if doesn't exist)
+    echo "Downloading DB from S3..."
+    uv run python -m pipeline.s3_sync.run download
 
     echo "Start sqlMesh"
     cd sqlMesh
     uv run sqlmesh --gateway "${GATEWAY:-local}" plan --auto-apply --include-unmodified --create-from prod --no-prompts "${TARGET:-dev}"
     echo "End sqlMesh"
+
+    # Upload updated DB back to S3
+    cd ..  # Return to root directory
+    echo "Uploading DB to S3..."
+    uv run python -m pipeline.s3_sync.run upload
     ;;
   "config_test")
     uv run python -m pipeline.config_test
+    ;;
+  "promote")
+    echo "Starting promotion from dev to prod..."
+    uv run python -m pipeline.s3_promote.run
+    echo "Promotion completed"
     ;;
   *)
     echo "Error: Invalid command '$1'"

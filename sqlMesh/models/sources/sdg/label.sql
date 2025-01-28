@@ -14,5 +14,3 @@ MODEL (
     read_parquet(
         @s3_read('edu/SDG_LABEL')
     );
-
-@s3_write();

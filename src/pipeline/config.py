@@ -27,7 +27,9 @@ STAGING_DATA_DIR = os.path.join(DATALAKE_DIR, "staging")
 MASTER_DATA_DIR = os.path.join(STAGING_DATA_DIR, "master")
 
 # Allow both Docker and local environment DuckDB path
-DB_PATH = os.getenv("DB_PATH", os.path.join(ROOT_DIR, "sqlMesh", "osaa_mvp.db"))
+DB_PATH = os.getenv(
+    "DB_PATH", os.path.join(ROOT_DIR, "sqlMesh", "unosaa_data_pipeline.db")
+)
 
 # Environment configurations
 TARGET = os.getenv("TARGET", "dev").lower()
@@ -73,9 +75,7 @@ def create_logger():
     # Custom log format with clear structure
     formatter = colorlog.ColoredFormatter(
         # Structured format with clear sections
-        "%(log_color)s[%(levelname)s]%(reset)s "
-        "%(blue)s[%(name)s]%(reset)s "
-        "%(message)s",
+        "%(log_color)s[%(levelname)s]%(reset)s %(blue)s[%(name)s]%(reset)s %(message)s",
         log_colors={
             "DEBUG": "cyan",
             "INFO": "green",

@@ -14,7 +14,7 @@ x-common-config: &common-config
     - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     - TARGET=${TARGET}
     - USERNAME=${USERNAME}
-    - DB_PATH=/app/sqlMesh/osaa_mvp.db
+    - DB_PATH=/app/sqlMesh/unosaa_data_pipeline.db
 
 services:
   pipeline:

@@ -82,25 +82,24 @@ def s3_init(return_session: bool = False) -> Tuple[Any, Optional[Any]]:
             raise ValueError("AWS_ROLE_ARN is not set in environment variables")
 
         region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
-        
+
         # Create STS client
-        sts_client = boto3.client('sts')
-        
+        sts_client = boto3.client("sts")
+
         # Assume role
         assumed_role_object = sts_client.assume_role(
-            RoleArn=role_arn,
-            RoleSessionName="OsaaMvpSession"
+            RoleArn=role_arn, RoleSessionName="OsaaMvpSession"
         )
 
         # Get temporary credentials
-        credentials = assumed_role_object['Credentials']
-        
+        credentials = assumed_role_object["Credentials"]
+
         # Create session with temporary credentials
         session = boto3.Session(
-            aws_access_key_id=credentials['AccessKeyId'],
-            aws_secret_access_key=credentials['SecretAccessKey'],
-            aws_session_token=credentials['SessionToken'],
-            region_name=region
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"],
+            region_name=region,
         )
 
         # Create S3 client

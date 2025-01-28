@@ -186,7 +186,7 @@ osaa-mvp/
 ├── scratchpad/                # Temporary space for working code or notes
 ├── sqlMesh/                   # SQLMesh configuration and models
 │   ├── models/                # SQLMesh model definitions
-│   └── osaa_mvp.db            # DuckDB database for SQLMesh transformations
+│   └── unosaa_data_pipeline.db            # DuckDB database for SQLMesh transformations
 ├── src/
 │   └── pipeline/             # Core pipeline code
 │       ├── ingest/           # Handles data ingestion from local raw csv to S3 parquet

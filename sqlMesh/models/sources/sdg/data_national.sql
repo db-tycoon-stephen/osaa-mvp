@@ -18,5 +18,3 @@ MODEL (
     read_parquet(
         @s3_read('edu/SDG_DATA_NATIONAL')
     );
-
-@s3_write();

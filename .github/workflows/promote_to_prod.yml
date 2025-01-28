@@ -1,4 +1,4 @@
-name: Build, QA, and Deploy Container when PRs to main are Merged
+name: Promote Dev Landing to Prod on Merge to Main
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-qa-and-deploy:
+  promote-to-prod:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
@@ -18,9 +18,6 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
       S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-      TARGET: qa
-      USERNAME: ${{ secrets.USERNAME }}
-      GATEWAY: local
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -31,32 +28,22 @@ jobs:
     - name: Build Docker Container
       run: docker build -t osaa-mvp .
 
-    - name: Run QA Process Through the Container
+    - name: Run Container with Promote
       id: run-container
       env:
-        TARGET: qa
-        GATEWAY: local
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'osaa-mvp' }}
-        USERNAME: ${{ secrets.USERNAME || 'osaa-mvp-user' }}
       run: |
         docker run --name osaa-mvp \
-          -e TARGET=$TARGET \
-          -e GATEWAY=$GATEWAY \
           -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
           -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
           -e S3_BUCKET_NAME=$S3_BUCKET_NAME \
-          -e USERNAME=$USERNAME \
-          osaa-mvp etl dev_github_deploy
-      continue-on-error: true
-
-    - name: Check Container Logs
-      run: docker logs osaa-mvp
+          osaa-mvp promote
 
     - name: Check Container Status
       run: |
@@ -80,31 +67,6 @@ jobs:
         fi
         
         echo "Container ran successfully"
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=raw,value=latest
-          type=ref,event=branch
-          type=sha,format=long
-
-    - name: Push to GitHub Container Registry
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Cleanup
       if: always()

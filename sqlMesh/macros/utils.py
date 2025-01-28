@@ -90,14 +90,11 @@ def s3_read(
     target = os.environ.get("TARGET", "dev").lower()
     username = os.environ.get("USERNAME", "default").lower()
 
-    # Construct the environment path segment
-    env_path = target if target == "prod" else f"dev/{target}_{username}"
-
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
         subfolder_filename = str(subfolder_filename).strip("'")
 
-    path = f"s3://{bucket}/{env_path}/landing/{subfolder_filename}.parquet"
+    path = f"s3://{bucket}/{target}/landing/{subfolder_filename}.parquet"
     return exp.Literal.string(path)
 
 
@@ -116,38 +113,46 @@ def s3_write(evaluator: MacroEvaluator) -> str:
         S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
         TARGET (str): prod or dev (default: "dev")
         USERNAME (str): Used in dev paths (default: "default")
+        DRY_RUN_FLG (str): Enable/disable dry run (default: "false")
 
     Note: Handles SQLMesh physical table names by removing hash suffixes and comments.
     """
 
-    # Get environment variables
-    bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
-    target = os.environ.get("TARGET", "dev").lower()
-    username = os.environ.get("USERNAME", "default").lower()
+    # Check if dry run is enabled
+    dry_run_flg = os.environ.get("DRY_RUN_FLG", "false").lower() == "true"
+    if dry_run_flg:
+        return None  # Return empty string to skip S3 upload
 
-    # Construct environment path
-    env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+    # Handling the dynamic nature of the schema/table name in sqlmesh
+    # It changes depending on the runtime stage. 
+    if evaluator.locals.get("runtime_stage") != "loading":
+       
+        # Get environment variables
+        bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
+        target = os.environ.get("TARGET", "dev").lower()
+        username = os.environ.get("USERNAME", "default").lower()
 
-    # Get and parse model name
-    this_model = str(evaluator.locals.get("this_model", ""))
+        # Construct environment path
+        env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
 
-    # Extract schema and determine schema path
-    schema = this_model.split(".")[1].strip('"')
-    schema_path = "master" if schema == "master" else "source"
+        # Get and parse model name
+        this_model = str(evaluator.locals.get("this_model", ""))
+        print(this_model)
 
-    # Extract and clean table name
-    table = this_model.split(".")[2].strip('"')  # Remove surrounding quotes
-    table = table.split()[0]  # Remove any comments
-    if "__" in table:
-        table = table.rsplit("__", 1)[0]  # Remove hash suffix
+        # Extract and clean schema and table name
+        # The this_model macro has in the format of "osaa_mvp"."sqlmesh__opri"."opri__data_national__4256542351"
+        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]
+        schema, table_name = full_table_name.split("__", 1)
+        schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
+        dir = schema + "/" if schema != schema_path else ""
 
-    # Construct S3 path
-    s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{table}.parquet"
+        # Construct S3 path
+        s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
 
-    # Build the SQL statement
-    sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
+        # Build the SQL statement
+        sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
 
-    return sql
+        return sql
 
 
 def find_indicator_models(

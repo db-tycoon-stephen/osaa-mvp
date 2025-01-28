@@ -31,5 +31,3 @@ MODEL (
     read_parquet(
         @s3_read('wdi/WDISeries')
     );
-
-@s3_write();
