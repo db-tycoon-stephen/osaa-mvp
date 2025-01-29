@@ -84,11 +84,9 @@ def s3_read(
     Environment:
         S3_BUCKET_NAME (str): Bucket name (default: "unosaa-data-pipeline")
         TARGET (str): prod or dev (default: "dev")
-        USERNAME (str): Used in dev paths (default: "default")
     """
     bucket = os.environ.get("S3_BUCKET_NAME", "unosaa-data-pipeline")
     target = os.environ.get("TARGET", "dev").lower()
-    username = os.environ.get("USERNAME", "default").lower()
 
     # Convert input to string if it's a SQLGlot expression
     if isinstance(subfolder_filename, exp.Expression):
@@ -133,21 +131,22 @@ def s3_write(evaluator: MacroEvaluator) -> str:
         username = os.environ.get("USERNAME", "default").lower()
 
         # Construct environment path
-        env_path = "prod" if target == "prod" else f"dev/{target}_{username}"
+        env_path = "prod" if target == "prod" else f"{target}_{username}"
 
         # Get and parse model name
         this_model = str(evaluator.locals.get("this_model", ""))
-        print(this_model)
+        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0] 
+        schema, table_name = full_table_name.split("__", 1)  
 
-        # Extract and clean schema and table name
-        # The this_model macro has in the format of "osaa_mvp"."sqlmesh__opri"."opri__data_national__4256542351"
-        full_table_name = this_model.split(".")[2].strip('"').split()[0].rsplit("__", 1)[0]
-        schema, table_name = full_table_name.split("__", 1)
+        # Determine directory path based on schema
         schema_path = "master" if schema == "master" else "_metadata" if schema == "_metadata" else "source"
         dir = schema + "/" if schema != schema_path else ""
 
         # Construct S3 path
-        s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
+        if target == "dev":
+            s3_path = f"s3://{bucket}/dev/staging/{env_path}/{schema_path}/{dir}{table_name}.parquet"    
+        else:
+            s3_path = f"s3://{bucket}/{env_path}/staging/{schema_path}/{dir}{table_name}.parquet"
 
         # Build the SQL statement
         sql = f"""COPY (SELECT * FROM {this_model}) TO '{s3_path}' (FORMAT PARQUET)"""
