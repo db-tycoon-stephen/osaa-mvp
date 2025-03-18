@@ -39,6 +39,12 @@ Here's how to get started with the OSAA Data Pipeline:
    # Run only transformations
    docker compose run --rm pipeline transform
 
+   # Run a configuration test
+   docker compose run --rm pipeline config_test
+
+   # Promote data (from dev/landing to prod/landing)
+   docker compose run --rm pipeline promote
+
    # Run in development mode with your username
    docker compose run --rm -e USERNAME=your_name pipeline etl
    ```
