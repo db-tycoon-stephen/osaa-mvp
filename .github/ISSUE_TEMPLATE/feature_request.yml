@@ -1,0 +1,139 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for the data pipeline
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide details to help Claude understand and implement it.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - Critical (Blocking production use)
+        - High (Important for production readiness)
+        - Medium (Nice to have, improves quality)
+        - Low (Future enhancement)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What type of feature is this?
+      options:
+        - Testing & Quality Assurance
+        - Performance Optimization
+        - Monitoring & Observability
+        - Documentation
+        - Data Quality & Validation
+        - Infrastructure & DevOps
+        - Security
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Example: We have no way to monitor data freshness, which means we don't know if the pipeline is running on schedule or if source data is stale.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should this feature work?
+      placeholder: |
+        Example: Add a data freshness check that:
+        1. Queries the max(updated_at) timestamp for each source table
+        2. Compares it against the current time
+        3. Sends an alert if data is older than 24 hours
+        4. Publishes freshness metrics to CloudWatch
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Details (Optional)
+      description: Technical details about how Claude should implement this
+      placeholder: |
+        Example:
+        - Create new module: src/pipeline/data_freshness.py
+        - Add CloudWatch metric: OSAA/DataFreshness
+        - Integrate with existing monitoring.py module
+        - Add configuration in config.yaml for freshness thresholds
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know this feature is complete?
+      placeholder: |
+        - [ ] Data freshness check runs after each ingestion
+        - [ ] CloudWatch metrics published for all source tables
+        - [ ] Alert triggers when data is stale
+        - [ ] Unit tests cover freshness logic
+        - [ ] Documentation updated in README
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: Are there other ways to solve this problem?
+      placeholder: |
+        Example:
+        - Option 1: Use Great Expectations for freshness checks
+        - Option 2: Implement in SQLMesh audits
+        - Option 3: Use AWS Lambda + EventBridge for monitoring
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to Create/Modify
+      description: Which files will Claude need to work with?
+      placeholder: |
+        Files to create:
+        - src/pipeline/data_freshness.py
+        - tests/unit/test_data_freshness.py
+
+        Files to modify:
+        - src/pipeline/config.py (add freshness config)
+        - README.md (document freshness monitoring)
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Does this feature depend on other issues or external libraries?
+      placeholder: |
+        Example:
+        - Depends on #4 (Monitoring framework must be set up first)
+        - Requires boto3 CloudWatch client
+        - May need new Python package: great-expectations
+
+  - type: checkboxes
+    id: claude-ready
+    attributes:
+      label: Claude Readiness Checklist
+      description: Check these to help Claude implement this efficiently
+      options:
+        - label: I've clearly defined the problem being solved
+        - label: I've provided acceptance criteria
+        - label: I've identified files to create/modify
+        - label: I've listed any dependencies or blockers

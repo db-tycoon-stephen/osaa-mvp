@@ -1,0 +1,190 @@
+name: 🔍 Data Quality Issue
+description: Report data quality problems or propose quality improvements
+title: "[DATA QUALITY] "
+labels: ["data-quality", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report data quality issues to help maintain high-quality datasets for UN-OSAA.
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue Type
+      description: What kind of data quality issue is this?
+      options:
+        - Data Accuracy (Incorrect values)
+        - Data Completeness (Missing/null values)
+        - Data Consistency (Contradictory data)
+        - Data Validity (Invalid formats or ranges)
+        - Data Freshness (Stale/outdated data)
+        - Data Uniqueness (Duplicate records)
+        - Schema Issues (Unexpected structure)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dataset
+    attributes:
+      label: Affected Dataset
+      description: Which dataset has the quality issue?
+      options:
+        - SDG Indicators (sources.sdg)
+        - OPRI Indicators (sources.opri)
+        - WDI Indicators (sources.wdi)
+        - Education Data (sources.edu)
+        - Master Indicators (master.indicators)
+        - All Datasets
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the data quality problem
+      placeholder: |
+        Example: The SDG indicator 1.1.1 (poverty rate) shows values greater than 100% for 15 countries in the 2023 dataset, which is impossible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: query
+    attributes:
+      label: SQL Query to Reproduce
+      description: Provide a query that demonstrates the issue
+      render: sql
+      placeholder: |
+        SELECT country_id, indicator_id, year, value
+        FROM sources.sdg
+        WHERE indicator_id = '1.1.1'
+          AND year = 2023
+          AND value > 100;
+
+  - type: textarea
+    id: expected_quality
+    attributes:
+      label: Expected Data Quality
+      description: What should the data look like?
+      placeholder: |
+        Example:
+        - All poverty rate values should be between 0 and 100
+        - No null values for indicator_id, country_id, or year
+        - Each combination of (indicator_id, country_id, year) should be unique
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact Assessment
+      description: What's the impact of this quality issue?
+      placeholder: |
+        Example:
+        - Affects 15 countries in 2023 dataset
+        - Represents ~2% of total SDG records
+        - Impacts poverty analysis reports
+        - May affect downstream BI dashboards
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this quality issue?
+      options:
+        - Critical (Blocks production use, affects many records)
+        - High (Significant impact, affects key indicators)
+        - Medium (Moderate impact, limited scope)
+        - Low (Minor issue, edge case)
+    validations:
+      required: true
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Suspected Root Cause
+      description: Do you know what might be causing this?
+      placeholder: |
+        Example:
+        - Source data from UN API has bad values
+        - Data transformation is multiplying by 100 when it shouldn't
+        - Missing validation during ingestion
+        - Type conversion error (string to numeric)
+
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed Fix
+      description: How should this be addressed?
+      placeholder: |
+        Example:
+        1. Add validation rule in ingestion: reject values > 100 for percentage indicators
+        2. Create SQLMesh audit to catch this in future
+        3. Add data quality test in pytest
+        4. Document expected ranges for each indicator type
+
+  - type: textarea
+    id: validation_rules
+    attributes:
+      label: Validation Rules to Add
+      description: What validation rules would prevent this issue?
+      placeholder: |
+        Example validation rules for Claude to implement:
+
+        ```python
+        # src/pipeline/validation_rules.py
+        INDICATOR_VALIDATION = {
+            '1.1.1': {  # Poverty rate
+                'type': 'percentage',
+                'min': 0,
+                'max': 100,
+                'allow_null': False
+            }
+        }
+        ```
+
+  - type: textarea
+    id: dbt_test
+    attributes:
+      label: Suggested dbt/SQLMesh Test
+      description: What test should Claude add to catch this?
+      render: sql
+      placeholder: |
+        -- sqlMesh/audits/validate_percentage_indicators.sql
+        AUDIT (
+            name validate_percentage_indicators,
+            dialect duckdb
+        );
+
+        SELECT
+            indicator_id,
+            country_id,
+            year,
+            value
+        FROM sources.sdg
+        WHERE indicator_id IN ('1.1.1', '1.1.2')  -- Percentage indicators
+          AND (value < 0 OR value > 100)
+        HAVING COUNT(*) > 0;
+
+  - type: checkboxes
+    id: actions
+    attributes:
+      label: Required Actions for Claude
+      description: What should Claude do to fix this?
+      options:
+        - label: Add data validation rules
+        - label: Create SQLMesh audit
+        - label: Add unit tests
+        - label: Fix data transformation logic
+        - label: Update documentation
+        - label: Backfill corrected data
+
+  - type: checkboxes
+    id: claude-ready
+    attributes:
+      label: Claude Readiness Checklist
+      options:
+        - label: I've provided a SQL query to reproduce the issue
+        - label: I've assessed the impact and severity
+        - label: I've suggested validation rules or tests
+        - label: I've identified the affected dataset(s)

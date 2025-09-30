@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/db-tycoon-stephen/osaa-mvp/discussions
+    about: Ask questions, share ideas, or discuss the project
+  - name: 📚 Documentation
+    url: https://github.com/db-tycoon-stephen/osaa-mvp/blob/main/README.md
+    about: Read the project documentation
+  - name: 🚀 Project Roadmap
+    url: https://github.com/db-tycoon-stephen/osaa-mvp/issues/13
+    about: View the production-grade implementation roadmap

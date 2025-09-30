@@ -1,0 +1,174 @@
+name: ⚡ Performance Issue
+description: Report performance problems or optimization opportunities
+title: "[PERFORMANCE] "
+labels: ["performance", "optimization"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report performance issues to help optimize the data pipeline.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What's running slowly?
+      options:
+        - Data Ingestion
+        - Data Transformation (SQLMesh)
+        - S3 Operations (Upload/Download)
+        - Query Performance
+        - Docker Build/Startup
+        - CI/CD Pipeline
+        - Overall Pipeline Runtime
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Performance Issue Description
+      description: What's slow and how slow is it?
+      placeholder: |
+        Example: The SDG indicators model takes 45 minutes to run, which is blocking daily pipeline execution. This model processes 2M rows but uses FULL refresh instead of incremental.
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Performance Metrics
+      description: Provide quantitative measurements
+      placeholder: |
+        Current Performance:
+        - Model execution time: 45 minutes
+        - Rows processed: 2,000,000
+        - S3 download time: 5 minutes
+        - S3 upload time: 8 minutes
+        - Total pipeline runtime: 1 hour 15 minutes
+
+        Target Performance:
+        - Model execution time: <5 minutes
+        - Total pipeline runtime: <15 minutes
+      value: |
+        Current Performance:
+        -
+        -
+
+        Target Performance:
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: profiling
+    attributes:
+      label: Profiling Data
+      description: Include profiling output, EXPLAIN plans, or logs
+      render: shell
+      placeholder: |
+        Paste profiling output, EXPLAIN ANALYZE results, or timing logs here...
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root Cause Analysis
+      description: What's causing the slowness?
+      placeholder: |
+        Example:
+        - Using kind="FULL" instead of incremental processing
+        - No partitioning on S3 data (reading entire dataset each time)
+        - Missing indexes on join columns
+        - Inefficient SQL query with cross joins
+        - Large file downloads from S3 (no parallelization)
+
+  - type: textarea
+    id: proposed_optimization
+    attributes:
+      label: Proposed Optimization
+      description: How can Claude optimize this?
+      placeholder: |
+        Example:
+        1. Convert to INCREMENTAL_BY_TIME_RANGE model
+        2. Add partitioning by year/month on S3
+        3. Implement parallel S3 downloads using boto3
+        4. Add query optimization (push down filters, avoid cross joins)
+        5. Use DuckDB's parallel query execution
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Details
+      description: Technical details for Claude
+      placeholder: |
+        Example:
+
+        ```python
+        # Change from:
+        @model("sources.sdg", kind="FULL")
+
+        # To:
+        @model(
+            "sources.sdg",
+            kind=dict(
+                name="INCREMENTAL_BY_TIME_RANGE",
+                time_column="updated_at",
+            ),
+            interval_unit="day",
+        )
+        ```
+
+        Expected improvement: 90% reduction in processing time
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this optimization?
+      options:
+        - Critical (Blocking production, pipeline unusable)
+        - High (Significant delay, affects SLAs)
+        - Medium (Noticeable slowness, user frustration)
+        - Low (Minor optimization, nice to have)
+    validations:
+      required: true
+
+  - type: textarea
+    id: benchmark
+    attributes:
+      label: Benchmark Plan
+      description: How should Claude verify the optimization worked?
+      placeholder: |
+        Example:
+        1. Run baseline: `time docker compose run --rm pipeline transform`
+        2. Implement optimization
+        3. Run optimized: `time docker compose run --rm pipeline transform`
+        4. Compare results and document speedup
+        5. Run with different data sizes to verify scalability
+
+        Success criteria: >50% reduction in execution time
+
+  - type: checkboxes
+    id: optimization_type
+    attributes:
+      label: Optimization Type
+      description: What kind of optimization is needed?
+      options:
+        - label: Algorithm optimization (better approach)
+        - label: Incremental processing (avoid reprocessing)
+        - label: Parallelization (concurrent execution)
+        - label: Caching (avoid redundant work)
+        - label: Query optimization (better SQL)
+        - label: Infrastructure (better resources)
+        - label: Data partitioning (reduce scan size)
+
+  - type: checkboxes
+    id: claude-ready
+    attributes:
+      label: Claude Readiness Checklist
+      options:
+        - label: I've provided quantitative performance metrics
+        - label: I've identified the root cause
+        - label: I've suggested specific optimizations
+        - label: I've defined success criteria

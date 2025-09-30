@@ -1,0 +1,124 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior in the data pipeline
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please provide as much detail as possible to help Claude understand and fix the issue.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical (Pipeline completely broken)
+        - High (Major functionality impacted)
+        - Medium (Feature partially broken)
+        - Low (Minor issue or cosmetic)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the pipeline is affected?
+      options:
+        - Data Ingestion (src/pipeline/ingest/)
+        - Data Transformation (sqlMesh/models/)
+        - S3 Operations (src/pipeline/s3_sync/, s3_promote/)
+        - Configuration (config.py, sqlMesh/config.yaml)
+        - CI/CD (.github/workflows/)
+        - Docker/Infrastructure
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: |
+        Example: The pipeline fails when processing SDG indicators with null values in the year column.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can Claude reproduce this bug?
+      placeholder: |
+        1. Run `docker compose up`
+        2. Execute `docker compose run --rm pipeline ingest`
+        3. Observe error in logs
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: The pipeline should handle null years gracefully by filtering them out or using a default value.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+      placeholder: Pipeline crashes with "TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Please paste relevant error messages or stack traces
+      render: shell
+      placeholder: |
+        Paste error logs here...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: What environment is this happening in?
+      value: |
+        - Environment: [dev/qa/prod]
+        - Docker Image: [version]
+        - Python Version: [3.11]
+        - DuckDB Version: [version]
+        - SQLMesh Version: [version]
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: |
+        - This started happening after PR #123
+        - Only affects SDG indicators, not OPRI or WDI
+        - Happens intermittently (50% of runs)
+
+  - type: checkboxes
+    id: claude-ready
+    attributes:
+      label: Claude Readiness Checklist
+      description: Check these to help Claude work on this issue efficiently
+      options:
+        - label: I've provided clear reproduction steps
+        - label: I've included error logs
+        - label: I've identified the affected component
+        - label: I've checked if this is a duplicate issue
