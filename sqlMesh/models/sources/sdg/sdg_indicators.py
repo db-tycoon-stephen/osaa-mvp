@@ -14,15 +14,18 @@ COLUMN_SCHEMA = {
     "magnitude": "String",
     "qualifier": "String",
     "indicator_description": "String",
+    "loaded_at": "Timestamp",
+    "file_modified_at": "Timestamp",
 }
 
 
 @model(
     "sources.sdg",
     is_sql=True,
-    kind="FULL",
+    kind="INCREMENTAL_BY_TIME_RANGE",
+    time_column="loaded_at",
     columns=COLUMN_SCHEMA,
-    description="""This model contains Sustainable Development Goals (SDG) data for all countries and indicators.""",
+    description="""This model contains Sustainable Development Goals (SDG) data for all countries and indicators. Uses incremental processing to only process new/updated data.""",
     column_descriptions={
         "indicator_id": "The unique identifier for the indicator",
         "country_id": "The unique identifier for the country",
@@ -31,6 +34,8 @@ COLUMN_SCHEMA = {
         "magnitude": "The magnitude of the indicator for the country and year",
         "qualifier": "The qualifier of the indicator for the country and year",
         "indicator_description": "The description of the indicator",
+        "loaded_at": "Timestamp when data entered the pipeline",
+        "file_modified_at": "Source file modification timestamp",
     },
     grain=("indicator_id", "country_id", "year"),
     physical_properties={
@@ -72,6 +77,8 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
             "magnitude",
             "qualifier",
             "indicator_label_en",
+            "loaded_at",
+            "file_modified_at",
         )
         .rename(indicator_description="indicator_label_en")
     )

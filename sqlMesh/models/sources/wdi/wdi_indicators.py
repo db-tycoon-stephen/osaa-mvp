@@ -14,13 +14,16 @@ COLUMN_SCHEMA = {
     "magnitude": "String",
     "qualifier": "String",
     "indicator_description": "String",
+    "loaded_at": "Timestamp",
+    "file_modified_at": "Timestamp",
 }
 
 
 @model(
     "sources.wdi",
     is_sql=True,
-    kind="FULL",
+    kind="INCREMENTAL_BY_UNIQUE_KEY",
+    unique_key=("country_id", "indicator_id", "year"),
     columns=COLUMN_SCHEMA
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
@@ -64,6 +67,17 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
             magnitude=ibis.literal(""),  # Empty string for now
             qualifier=ibis.literal(""),  # Empty string for now
             indicator_description=wdi_series_renamed["long_definition"]
+        )
+        .select(
+            "country_id",
+            "indicator_id",
+            "year",
+            "value",
+            "magnitude",
+            "qualifier",
+            "indicator_description",
+            "loaded_at",
+            "file_modified_at",
         )
     )
 

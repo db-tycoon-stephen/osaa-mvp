@@ -13,13 +13,17 @@ COLUMN_SCHEMA = {
     "magnitude": "String",
     "qualifier": "String",
     "indicator_description": "String",
+    "loaded_at": "Timestamp",
+    "file_modified_at": "Timestamp",
+    "source": "String",
 }
 
 
 @model(
     "master.indicators",
     is_sql=True,
-    kind="FULL",
+    kind="INCREMENTAL_BY_UNIQUE_KEY",
+    unique_key=("indicator_id", "country_id", "year", "source"),
     columns=COLUMN_SCHEMA,
     post_statements=["@s3_write()"]
 )
