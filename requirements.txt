@@ -20,3 +20,12 @@ psycopg2-binary==2.9.9
 black==24.1.1
 isort==5.13.2
 ruff>=0.3.0
+
+# Testing Dependencies
+pytest>=8.0.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-xdist>=3.5.0  # For parallel test execution
+moto[s3]>=5.0.0  # Mock AWS services for testing
+faker>=22.0.0  # Generate fake test data
+freezegun>=1.4.0  # Mock datetime for testing

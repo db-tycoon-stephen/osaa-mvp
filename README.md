@@ -385,6 +385,295 @@ Automated daily data processing:
 - Develop automated reporting capabilities
 - Improve documentation and user guides
 
+## Testing
+
+The OSAA Data Pipeline includes a comprehensive testing framework to ensure data quality, reliability, and correctness.
+
+### Test Structure
+
+The testing framework is organized into three levels:
+
+```
+tests/
+├── conftest.py              # Shared fixtures and test configuration
+├── unit/                    # Fast, isolated unit tests
+│   ├── test_ingest.py      # Ingestion module tests
+│   ├── test_s3_sync.py     # S3 sync tests
+│   ├── test_s3_promote.py  # Environment promotion tests
+│   └── test_config.py      # Configuration tests
+├── integration/             # Integration tests with mocked AWS
+│   ├── test_s3_operations.py      # S3 workflow tests
+│   └── test_pipeline_end_to_end.py # Complete pipeline tests
+└── fixtures/                # Test data files
+
+sqlMesh/tests/              # SQLMesh model tests
+├── test_sdg_indicators.yaml
+├── test_opri_indicators.yaml
+└── test_wdi_indicators.yaml
+```
+
+### Running Tests
+
+#### Run All Tests
+
+```bash
+# Run all tests with coverage
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=src/pipeline --cov-report=html
+```
+
+#### Run Specific Test Categories
+
+```bash
+# Run only unit tests (fast)
+pytest -m unit
+
+# Run only integration tests
+pytest -m integration
+
+# Run only S3-related tests
+pytest -m s3
+
+# Run only SQLMesh tests
+pytest -m sqlmesh
+
+# Skip slow tests
+pytest -m "not slow"
+```
+
+#### Run Specific Test Files
+
+```bash
+# Test ingestion module
+pytest tests/unit/test_ingest.py
+
+# Test S3 operations
+pytest tests/integration/test_s3_operations.py
+
+# Test specific function
+pytest tests/unit/test_ingest.py::TestIngestInitialization::test_ingest_init_with_s3_enabled
+```
+
+#### Parallel Testing
+
+```bash
+# Run tests in parallel (faster)
+pytest -n auto
+
+# Run with 4 parallel workers
+pytest -n 4
+```
+
+### Test Coverage
+
+The project maintains a minimum test coverage of 70% for all pipeline code.
+
+```bash
+# Generate coverage report
+pytest --cov=src/pipeline --cov-report=html
+
+# View coverage in browser
+open htmlcov/index.html
+```
+
+Current coverage targets:
+- Unit tests: >70% code coverage
+- Integration tests: All S3 operations covered
+- SQLMesh tests: All data models tested
+
+### Testing Best Practices
+
+#### Unit Tests
+- Test individual functions in isolation
+- Mock external dependencies (S3, databases)
+- Focus on edge cases and error handling
+- Keep tests fast (<1 second each)
+
+#### Integration Tests
+- Use moto to mock AWS services
+- Test complete workflows end-to-end
+- Verify data integrity through pipelines
+- Test error recovery scenarios
+
+#### SQLMesh Tests
+- Validate data transformations
+- Check not_null constraints
+- Verify unique grain requirements
+- Test row count expectations
+- Validate column renaming and joins
+
+### Writing New Tests
+
+#### Adding Unit Tests
+
+```python
+import pytest
+from unittest.mock import patch, MagicMock
+
+@pytest.mark.unit
+def test_my_function(duckdb_connection):
+    """Test description."""
+    # Arrange
+    expected = "expected_result"
+
+    # Act
+    result = my_function()
+
+    # Assert
+    assert result == expected
+```
+
+#### Adding Integration Tests
+
+```python
+import pytest
+from moto import mock_aws
+
+@pytest.mark.integration
+@pytest.mark.s3
+def test_s3_workflow(s3_client, s3_bucket):
+    """Test complete S3 workflow."""
+    # Setup
+    s3_client.put_object(Bucket=s3_bucket, Key="test.parquet", Body=b"data")
+
+    # Execute
+    result = perform_s3_operation(s3_bucket)
+
+    # Verify
+    assert result["success"] is True
+```
+
+#### Adding SQLMesh Tests
+
+```yaml
+test_model_not_null:
+  model: sources.my_model
+  description: Test that critical columns are not null
+  inputs:
+    my_schema.my_table:
+      rows:
+        - id: "001"
+          value: 100
+  outputs:
+    query: |
+      SELECT COUNT(*) as count
+      FROM sources.my_model
+      WHERE id IS NOT NULL
+    rows:
+      - count: 1
+```
+
+### Continuous Integration
+
+Tests automatically run on:
+- Every pull request
+- Every push to main branch
+- Scheduled nightly builds
+
+CI Pipeline checks:
+1. All tests pass
+2. Coverage >70%
+3. No linting errors
+4. SQLMesh model tests pass
+
+### Troubleshooting Tests
+
+#### Common Issues
+
+**Import Errors**
+```bash
+# Install test dependencies
+pip install -r requirements.txt
+
+# Install in development mode
+pip install -e .
+```
+
+**AWS Credential Errors**
+```bash
+# Set mock AWS credentials for tests
+export AWS_ACCESS_KEY_ID=testing
+export AWS_SECRET_ACCESS_KEY=testing
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+**DuckDB Extension Errors**
+```bash
+# Tests automatically install required extensions
+# If issues persist, clear DuckDB cache
+rm -rf ~/.duckdb/
+```
+
+**Coverage Not Generated**
+```bash
+# Ensure pytest-cov is installed
+pip install pytest-cov
+
+# Run with explicit coverage paths
+pytest --cov=src/pipeline --cov-report=term-missing
+```
+
+### Test Data
+
+Test fixtures provide realistic sample data for:
+- SDG indicators (Sustainable Development Goals)
+- OPRI indicators (Peace and Security)
+- WDI indicators (World Bank Development Indicators)
+
+Fixtures include:
+- Sample CSV files with proper structure
+- Mock S3 buckets and objects
+- In-memory DuckDB databases
+- Mock AWS credentials
+
+### Performance Testing
+
+```bash
+# Show slowest tests
+pytest --durations=10
+
+# Profile test execution
+pytest --profile
+
+# Run only fast tests
+pytest -m "not slow"
+```
+
+### Test Documentation
+
+Each test includes:
+- Clear descriptive name
+- Docstring explaining purpose
+- Arrange-Act-Assert structure
+- Comments for complex logic
+- Markers for categorization
+
+Example:
+```python
+@pytest.mark.unit
+@pytest.mark.s3
+def test_s3_upload_validates_bucket_name(mock_s3_client):
+    """Test that S3 upload validates bucket name before attempting upload.
+
+    This test ensures that invalid bucket names are rejected early
+    to prevent unnecessary API calls.
+    """
+    # Arrange: Setup invalid bucket name
+    invalid_bucket = "invalid..bucket"
+
+    # Act: Attempt upload
+    with pytest.raises(ValueError, match="Invalid bucket name"):
+        upload_to_s3(invalid_bucket, "key", b"data")
+
+    # Assert: Verify no S3 API calls were made
+    mock_s3_client.put_object.assert_not_called()
+```
+
 ## Contact
 
 - Mirian Lima (Project Sponsor) - mirian.lima@un.org
