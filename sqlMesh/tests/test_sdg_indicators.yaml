@@ -1,0 +1,201 @@
+# SQLMesh tests for SDG indicators model
+# Tests data quality, schema, and transformations
+
+test_sdg_indicators_not_null:
+  model: sources.sdg
+  description: Test that critical columns are not null
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.2.1"
+          country_id: "BDI"
+          year: 2021
+          value: 30.2
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Poverty headcount ratio"
+        - indicator_id: "1.2.1"
+          indicator_label_en: "Poverty rate"
+  outputs:
+    query: |
+      SELECT
+        COUNT(*) as total_rows,
+        COUNT(indicator_id) as non_null_indicator,
+        COUNT(country_id) as non_null_country,
+        COUNT(year) as non_null_year
+      FROM sources.sdg
+    rows:
+      - total_rows: 2
+        non_null_indicator: 2
+        non_null_country: 2
+        non_null_year: 2
+
+test_sdg_indicators_unique_grain:
+  model: sources.sdg
+  description: Test that grain (indicator_id, country_id, year) is unique
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2021
+          value: 26.0
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.1.1"
+          country_id: "BDI"
+          year: 2020
+          value: 30.2
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Poverty headcount ratio"
+  outputs:
+    query: |
+      SELECT
+        indicator_id,
+        country_id,
+        year,
+        COUNT(*) as row_count
+      FROM sources.sdg
+      GROUP BY indicator_id, country_id, year
+      HAVING COUNT(*) > 1
+    rows: []
+
+test_sdg_indicators_join_preserves_rows:
+  model: sources.sdg
+  description: Test that left join with labels preserves all data rows
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.2.1"
+          country_id: "KEN"
+          year: 2020
+          value: 15.8
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Poverty headcount ratio"
+        - indicator_id: "1.2.1"
+          indicator_label_en: "Poverty rate"
+  outputs:
+    query: |
+      SELECT COUNT(*) as row_count
+      FROM sources.sdg
+    rows:
+      - row_count: 2
+
+test_sdg_indicators_column_rename:
+  model: sources.sdg
+  description: Test that indicator_label_en is renamed to indicator_description
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Poverty headcount ratio"
+  outputs:
+    query: |
+      SELECT indicator_description
+      FROM sources.sdg
+      WHERE indicator_id = '1.1.1'
+    rows:
+      - indicator_description: "Poverty headcount ratio"
+
+test_sdg_indicators_value_range:
+  model: sources.sdg
+  description: Test that values are within expected ranges
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.1.1"
+          country_id: "BDI"
+          year: 2020
+          value: -5.0
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Test indicator"
+  outputs:
+    query: |
+      SELECT
+        COUNT(*) as total_rows,
+        COUNT(CASE WHEN value >= 0 THEN 1 END) as positive_values,
+        COUNT(CASE WHEN value < 0 THEN 1 END) as negative_values
+      FROM sources.sdg
+    rows:
+      - total_rows: 2
+        positive_values: 1
+        negative_values: 1
+
+test_sdg_indicators_year_range:
+  model: sources.sdg
+  description: Test that years are within valid range
+  inputs:
+    sdg.data_national:
+      rows:
+        - indicator_id: "1.1.1"
+          country_id: "AFG"
+          year: 2020
+          value: 25.5
+          magnitude: ""
+          qualifier: ""
+        - indicator_id: "1.1.1"
+          country_id: "BDI"
+          year: 2021
+          value: 30.2
+          magnitude: ""
+          qualifier: ""
+    sdg.label:
+      rows:
+        - indicator_id: "1.1.1"
+          indicator_label_en: "Test indicator"
+  outputs:
+    query: |
+      SELECT
+        MIN(year) as min_year,
+        MAX(year) as max_year
+      FROM sources.sdg
+    rows:
+      - min_year: 2020
+        max_year: 2021

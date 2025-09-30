@@ -1,0 +1,262 @@
+# SQLMesh tests for WDI indicators model
+# Tests data quality, schema, and transformations
+
+test_wdi_indicators_not_null:
+  model: sources.wdi
+  description: Test that critical columns are not null
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "1960": null
+          "2020": 65298.0
+          "2021": 69287.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic Policy & Debt"
+          indicator_name: "GDP per capita (current US$)"
+          short_definition: "GDP per capita is gross domestic product divided by midyear population"
+          long_definition: "GDP per capita is gross domestic product divided by midyear population. GDP is the sum of gross value added by all resident producers."
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank national accounts data"
+  outputs:
+    query: |
+      SELECT
+        COUNT(*) as total_rows,
+        COUNT(country_id) as non_null_country,
+        COUNT(indicator_id) as non_null_indicator,
+        COUNT(year) as non_null_year
+      FROM sources.wdi
+    rows:
+      - total_rows: 2
+        non_null_country: 2
+        non_null_indicator: 2
+        non_null_year: 2
+
+test_wdi_indicators_unique_grain:
+  model: sources.wdi
+  description: Test that grain (country_id, indicator_id, year) is unique
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 65298.0
+          "2021": 69287.0
+        - country_name: "Canada"
+          country_code: "CAN"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 52051.0
+          "2021": 53089.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic Policy & Debt"
+          indicator_name: "GDP per capita (current US$)"
+          short_definition: "GDP per capita"
+          long_definition: "GDP per capita is gross domestic product divided by midyear population"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT
+        country_id,
+        indicator_id,
+        year,
+        COUNT(*) as row_count
+      FROM sources.wdi
+      GROUP BY country_id, indicator_id, year
+      HAVING COUNT(*) > 1
+    rows: []
+
+test_wdi_indicators_pivot_transformation:
+  model: sources.wdi
+  description: Test that wide format is correctly pivoted to long format
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 65298.0
+          "2021": 69287.0
+          "2022": 70248.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic"
+          indicator_name: "GDP per capita"
+          short_definition: "GDP per capita"
+          long_definition: "GDP per capita description"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT COUNT(*) as row_count
+      FROM sources.wdi
+      WHERE country_id = 'USA' AND indicator_id = 'GDP.PCAP.CD'
+    rows:
+      - row_count: 3
+
+test_wdi_indicators_column_rename:
+  model: sources.wdi
+  description: Test that column names are correctly renamed
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 65298.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic"
+          indicator_name: "GDP per capita"
+          short_definition: "Short def"
+          long_definition: "Long definition text"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT
+        country_id,
+        indicator_id,
+        indicator_description
+      FROM sources.wdi
+      WHERE country_id = 'USA'
+    rows:
+      - country_id: "USA"
+        indicator_id: "GDP.PCAP.CD"
+        indicator_description: "Long definition text"
+
+test_wdi_indicators_magnitude_qualifier_defaults:
+  model: sources.wdi
+  description: Test that magnitude and qualifier are set to empty strings
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 65298.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic"
+          indicator_name: "GDP per capita"
+          short_definition: "Short def"
+          long_definition: "Long def"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT
+        magnitude,
+        qualifier
+      FROM sources.wdi
+      WHERE country_id = 'USA'
+    rows:
+      - magnitude: ""
+        qualifier: ""
+
+test_wdi_indicators_join_with_series:
+  model: sources.wdi
+  description: Test that data is correctly joined with series metadata
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2020": 65298.0
+        - country_name: "Canada"
+          country_code: "CAN"
+          indicator_name: "GDP total"
+          indicator_code: "NY.GDP.MKTP.CD"
+          "2020": 1988336.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic"
+          indicator_name: "GDP per capita"
+          short_definition: "GDP per capita short"
+          long_definition: "GDP per capita description"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+        - series_code: "NY.GDP.MKTP.CD"
+          topic: "Economic"
+          indicator_name: "GDP total"
+          short_definition: "GDP total short"
+          long_definition: "GDP total description"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT
+        COUNT(DISTINCT indicator_id) as indicator_count,
+        COUNT(DISTINCT indicator_description) as description_count
+      FROM sources.wdi
+    rows:
+      - indicator_count: 2
+        description_count: 2
+
+test_wdi_indicators_null_value_handling:
+  model: sources.wdi
+  description: Test handling of null values in year columns
+  inputs:
+    wdi.csv:
+      rows:
+        - country_name: "United States"
+          country_code: "USA"
+          indicator_name: "GDP per capita"
+          indicator_code: "GDP.PCAP.CD"
+          "2019": 65279.0
+          "2020": null
+          "2021": 69287.0
+    wdi.series:
+      rows:
+        - series_code: "GDP.PCAP.CD"
+          topic: "Economic"
+          indicator_name: "GDP per capita"
+          short_definition: "Short"
+          long_definition: "Long description"
+          unit_of_measure: "current US$"
+          periodicity: "Annual"
+          base_period: null
+          source: "World Bank"
+  outputs:
+    query: |
+      SELECT
+        COUNT(*) as total_rows,
+        COUNT(value) as non_null_values
+      FROM sources.wdi
+      WHERE country_id = 'USA' AND indicator_id = 'GDP.PCAP.CD'
+    rows:
+      - total_rows: 3
+        non_null_values: 2
