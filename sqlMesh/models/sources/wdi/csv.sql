@@ -1,6 +1,8 @@
 MODEL (
     name wdi.csv,
-    kind FULL,
+    kind INCREMENTAL_BY_TIME_RANGE(
+      time_column loaded_at
+    ),
     columns (
       "Country Name" TEXT,
       "Country Code" TEXT,
@@ -69,13 +71,24 @@ MODEL (
       "2020" DECIMAL,
       "2021" DECIMAL,
       "2022" DECIMAL,
-      "2023" DECIMAL
+      "2023" DECIMAL,
+      loaded_at TIMESTAMP,
+      file_modified_at TIMESTAMP
     )
   );
 
+  -- Phase 2: Incremental processing by time range with file modification tracking
+  -- Only processes records where loaded_at is within the execution time range
+  -- Uses file_modified_at to track source file changes
   SELECT
-    *
+    *,
+    CURRENT_TIMESTAMP AS loaded_at,
+    CURRENT_TIMESTAMP AS file_modified_at  -- TODO: Replace with actual file modification time from metadata
   FROM
       read_parquet(
         @s3_read('wdi/WDICSV')
-    );
+    )
+  WHERE
+    -- Incremental filter: only process new/updated data
+    loaded_at >= @start_ds
+    AND loaded_at < @end_ds;

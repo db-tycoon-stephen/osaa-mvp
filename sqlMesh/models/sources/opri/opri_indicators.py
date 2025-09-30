@@ -14,14 +14,18 @@ COLUMN_SCHEMA = {
     "magnitude": "String",
     "qualifier": "String",
     "indicator_description": "String",
+    "loaded_at": "Timestamp",
+    "file_modified_at": "Timestamp",
 }
 
 
 @model(
     "sources.opri",
     is_sql=True,
-    kind="FULL",
-    columns=COLUMN_SCHEMA
+    kind="INCREMENTAL_BY_TIME_RANGE",
+    time_column="loaded_at",
+    columns=COLUMN_SCHEMA,
+    grain=("indicator_id", "country_id", "year")
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     source_folder_path = "opri"
@@ -50,6 +54,8 @@ def entrypoint(evaluator: MacroEvaluator) -> str:
             "magnitude",
             "qualifier",
             "indicator_label_en",
+            "loaded_at",
+            "file_modified_at",
         )
         .rename(indicator_description="indicator_label_en")
     )
