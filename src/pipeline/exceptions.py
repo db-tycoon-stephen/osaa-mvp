@@ -82,3 +82,80 @@ class FileConversionError(IngestError):
     """
 
     pass
+
+
+class TransientError(PipelineBaseError):
+    """
+    Raised for transient errors that may succeed on retry.
+
+    These are temporary errors such as:
+    - Network timeouts
+    - Throttling errors
+    - Temporary service unavailability
+    """
+
+    pass
+
+
+class CheckpointError(PipelineBaseError):
+    """
+    Raised for checkpoint system errors.
+
+    Covers issues with:
+    - Checkpoint database operations
+    - Checkpoint state inconsistencies
+    - Checkpoint validation failures
+    """
+
+    pass
+
+
+class TransactionError(PipelineBaseError):
+    """
+    Raised for transaction management errors.
+
+    Covers issues with:
+    - Transaction staging failures
+    - Commit/rollback failures
+    - Transaction state violations
+    """
+
+    pass
+
+
+class ValidationError(TransactionError):
+    """
+    Raised when transaction validation fails.
+
+    Specific to validation failures during:
+    - Pre-commit validation checks
+    - Data integrity verification
+    - Business rule validation
+    """
+
+    pass
+
+
+class RollbackError(TransactionError):
+    """
+    Raised when transaction rollback fails.
+
+    Specific to failures during:
+    - Staging cleanup
+    - State restoration
+    - Resource deallocation
+    """
+
+    pass
+
+
+class PartialFailureError(PipelineBaseError):
+    """
+    Raised when batch operations have partial failures.
+
+    This exception indicates that some operations succeeded
+    while others failed. Contains details about both
+    successful and failed operations.
+    """
+
+    pass

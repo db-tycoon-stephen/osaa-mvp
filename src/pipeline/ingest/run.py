@@ -11,8 +11,9 @@ import tempfile
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import duckdb
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
+from pipeline.checkpoint import CheckpointScope, PipelineCheckpoint
 from pipeline.config import (
     ENABLE_S3_UPLOAD,
     LANDING_AREA_FOLDER,
@@ -20,6 +21,11 @@ from pipeline.config import (
     S3_BUCKET_NAME,
     TARGET,
     USERNAME,
+)
+from pipeline.error_handler import (
+    ErrorHandler,
+    PartialFailureCollector,
+    retryable_operation,
 )
 from pipeline.exceptions import (
     FileConversionError,
@@ -61,7 +67,20 @@ class Ingest:
         self.con = duckdb.connect()
         self.con.install_extension('httpfs')
         self.con.load_extension('httpfs')
-        
+
+        # Initialize checkpoint system
+        self.checkpoint = PipelineCheckpoint(pipeline_name="ingest")
+        logger.info("Checkpoint system initialized")
+
+        # Initialize error handler with retry logic
+        self.error_handler = ErrorHandler(
+            max_retry_attempts=3,
+            initial_retry_delay=1.0,
+            enable_circuit_breaker=True,
+            circuit_breaker_threshold=10
+        )
+        logger.info("Error handler initialized")
+
         if ENABLE_S3_UPLOAD:
             logger.info("Initializing S3 client...")
             self.s3_client, self.session = s3_init(return_session=True)
@@ -111,15 +130,39 @@ class Ingest:
             log_exception(logger, e, {"context": "S3 secret setup"})
             raise S3ConfigurationError(error_msg)
 
+    @retryable_operation(max_attempts=3, initial_delay=2.0)
     def convert_csv_to_parquet_and_upload(
         self, local_file_path: str, s3_file_path: Optional[str] = None
     ) -> None:
         """Convert a CSV file to Parquet and optionally upload it to S3.
 
+        This method is idempotent - it checks if the file has already been
+        processed using checksums and skips if unchanged.
+
         :param local_file_path: Path to the local CSV file
         :param s3_file_path: S3 path to upload the Parquet file
         :raises FileConversionError: If file conversion or upload fails
         """
+        # Check if already processed with matching checksum
+        if self.checkpoint.is_completed(
+            CheckpointScope.FILE,
+            s3_file_path or local_file_path,
+            local_file_path,
+            verify_checksum=True
+        ):
+            logger.info(
+                f"File {local_file_path} already processed with matching checksum, skipping"
+            )
+            return
+
+        # Mark as started
+        self.checkpoint.mark_started(
+            CheckpointScope.FILE,
+            s3_file_path or local_file_path,
+            local_file_path,
+            metadata={"s3_path": s3_file_path}
+        )
+
         try:
             # Extract table name from filename
             table_name = re.search(r"[^/]+(?=\.)", local_file_path)
@@ -159,18 +202,40 @@ class Ingest:
             """
             self.con.sql(copy_sql)
 
+            # Mark as completed
+            self.checkpoint.mark_completed(
+                CheckpointScope.FILE,
+                s3_file_path or local_file_path,
+                local_file_path,
+                metadata={"row_count": row_count, "s3_path": s3_file_path}
+            )
+
             logger.info(
                 f"Successfully converted and uploaded {local_file_path} to {s3_file_path}"
             )
 
         except FileNotFoundError as e:
-            logger.error(f"File not found error: {e}")
-            raise FileConversionError(str(e))
+            error_msg = f"File not found: {e}"
+            logger.error(error_msg)
+            self.checkpoint.mark_failed(
+                CheckpointScope.FILE,
+                s3_file_path or local_file_path,
+                error_msg,
+                local_file_path
+            )
+            raise FileConversionError(error_msg)
         except Exception as e:
+            error_msg = f"Conversion failed: {e}"
             logger.error(f"Unexpected error: {e}")
             logger.error(f"Error type: {type(e).__name__}")
             logger.error(f"Error details: {str(e)}")
-            raise FileConversionError(f"Conversion failed: {e}")
+            self.checkpoint.mark_failed(
+                CheckpointScope.FILE,
+                s3_file_path or local_file_path,
+                error_msg,
+                local_file_path
+            )
+            raise FileConversionError(error_msg)
 
     def generate_file_to_s3_folder_mapping(self, raw_data_dir: str) -> dict:
         """
@@ -207,9 +272,16 @@ class Ingest:
     def convert_and_upload_files(self):
         """
         Convert CSV files to Parquet and optionally upload them to S3.
+
+        This method uses partial failure handling - it processes all files
+        and collects errors instead of failing fast on the first error.
         """
         try:
             file_mapping = self.generate_file_to_s3_folder_mapping(RAW_DATA_DIR)
+            logger.info(f"Found {len(file_mapping)} files to process")
+
+            # Create list of (local_path, s3_path) tuples
+            file_pairs: List[Tuple[str, str]] = []
             for file_name_csv, s3_sub_folder in file_mapping.items():
                 local_file_path = os.path.join(
                     RAW_DATA_DIR, s3_sub_folder, file_name_csv
@@ -219,22 +291,46 @@ class Ingest:
                 file_name_pq = f"{os.path.splitext(file_name_csv)[0]}.parquet"
 
                 # Construct S3 path
-                logger.info(f"Constructing S3 path with TARGET={TARGET}, USERNAME={USERNAME}")
                 s3_file_path = f"s3://{S3_BUCKET_NAME}/{TARGET}/landing/{s3_sub_folder}/{file_name_pq}"
-                
-                logger.info(s3_file_path)
 
                 if os.path.isfile(local_file_path):
-                    self.convert_csv_to_parquet_and_upload(
-                        local_file_path, s3_file_path
-                    )
+                    file_pairs.append((local_file_path, s3_file_path))
                 else:
                     logger.warning(f"File not found: {local_file_path}")
 
-            logger.info("Ingestion process completed successfully.")
+            # Process files with partial failure handling
+            def process_file_pair(file_pair: Tuple[str, str]) -> None:
+                local_path, s3_path = file_pair
+                logger.info(f"Processing {local_path} → {s3_path}")
+                self.convert_csv_to_parquet_and_upload(local_path, s3_path)
+
+            collector = self.error_handler.process_batch(
+                items=file_pairs,
+                process_func=process_file_pair,
+                continue_on_error=True,
+                log_progress=True
+            )
+
+            # Log checkpoint statistics
+            stats = self.checkpoint.get_statistics()
+            logger.info(f"Checkpoint statistics: {stats}")
+
+            # Check if we had any failures
+            if collector.has_failures():
+                logger.warning(
+                    f"Ingestion completed with {collector.get_failure_count()} failures "
+                    f"out of {collector.get_total_count()} files"
+                )
+                # Raise exception with all failures collected
+                collector.raise_if_failures("File ingestion had partial failures")
+            else:
+                logger.info(
+                    f"Ingestion process completed successfully. "
+                    f"Processed {collector.get_success_count()} files."
+                )
 
         except Exception as e:
-            logger.error(f"❌ Error during file ingestion: {e}")
+            logger.error(f"Error during file ingestion: {e}")
             raise
 
     def run(self):
