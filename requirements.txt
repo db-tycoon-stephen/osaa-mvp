@@ -16,6 +16,9 @@ ipywidgets>=8.0.0  # Required for IPython/SQLMesh compatibility
 # Database Connections
 psycopg2-binary==2.9.9
 
+# Monitoring and Alerting
+requests>=2.31.0  # For Slack webhook integration
+
 # Development and Linting Dependencies
 black==24.1.1
 isort==5.13.2

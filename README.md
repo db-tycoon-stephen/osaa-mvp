@@ -369,16 +369,61 @@ Automated daily data processing:
 - Never commit `.env` files containing sensitive credentials
 - Store all sensitive information as GitHub Secrets for CI/CD
 
-## 9. Next Steps
+## 9. Monitoring and Observability
 
-### 9.1 Data Processing Improvements
+The pipeline includes comprehensive monitoring infrastructure for production-grade operations:
+
+### 9.1 Quick Start
+
+```bash
+# Setup monitoring infrastructure (one-time)
+python scripts/setup_monitoring.py --environment prod --email your-email@example.com
+
+# Check data freshness
+python scripts/check_freshness.py --verbose
+
+# Send alerts for stale data
+python scripts/check_freshness.py --send-alerts
+```
+
+### 9.2 Features
+
+- **CloudWatch Metrics**: Pipeline execution, data freshness, quality scores, error tracking
+- **Multi-Channel Alerts**: Slack, Email (SES), and SNS notifications
+- **Data Freshness Monitoring**: SLA-based freshness checks with automated alerts
+- **Execution Tracking**: Historical analysis of pipeline runs stored in DuckDB
+- **CloudWatch Dashboards**: Pre-configured dashboards for key metrics
+
+### 9.3 Documentation
+
+See [docs/MONITORING.md](docs/MONITORING.md) for complete monitoring documentation including:
+- Architecture and components
+- Setup instructions
+- Metrics reference
+- Alerting configuration
+- Troubleshooting guide
+
+### 9.4 Environment Variables
+
+Add these to your `.env` file for alerting:
+
+```bash
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+ALERT_EMAIL_FROM=noreply@osaa-pipeline.com
+ALERT_EMAIL_TO=admin@example.com
+SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789:osaa-pipeline-alerts
+```
+
+## 10. Next Steps
+
+### 10.1 Data Processing Improvements
 
 - Add support for more data sources and formats
 - Enhance data validation and quality checks
 - Optimize transformation performance
 - Expand the data catalog
 
-### 9.2 User Interface
+### 10.2 User Interface
 
 - Add web-based data exploration tools
 - Create interactive dashboards
