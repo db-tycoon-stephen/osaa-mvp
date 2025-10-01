@@ -369,16 +369,86 @@ Automated daily data processing:
 - Never commit `.env` files containing sensitive credentials
 - Store all sensitive information as GitHub Secrets for CI/CD
 
-## 9. Next Steps
+## 9. Data Quality Framework
 
-### 9.1 Data Processing Improvements
+### 9.1 Overview
+
+The UN-OSAA data pipeline includes a comprehensive data quality validation framework that ensures data integrity, completeness, and reliability throughout the pipeline. The framework operates at multiple stages:
+
+1. **Pre-Upload Validation**: Real-time checks during data ingestion
+2. **SQLMesh Audits**: Post-load validation with automated checks
+3. **Quality Metrics**: Continuous monitoring and scoring
+4. **Quality Reports**: Automated reporting in multiple formats
+
+### 9.2 Running Data Quality Checks
+
+#### Generate Quality Reports
+
+```bash
+# Console report (default)
+docker compose run --rm pipeline python scripts/data_quality_report.py
+
+# HTML report
+docker compose run --rm pipeline python scripts/data_quality_report.py --format html --output reports/quality_report.html
+
+# JSON export
+docker compose run --rm pipeline python scripts/data_quality_report.py --format json --output reports/quality_metrics.json
+```
+
+#### Run SQLMesh Audits
+
+```bash
+# Run all audits
+docker compose run --rm pipeline sqlmesh audit
+
+# Run specific audit
+docker compose run --rm pipeline sqlmesh audit indicators_not_null
+```
+
+### 9.3 Quality Dimensions Monitored
+
+- **Completeness**: Not null checks, country coverage, time series completeness
+- **Accuracy**: Value range validation, extreme outlier detection
+- **Consistency**: Unique grain verification, referential integrity
+- **Timeliness**: Data freshness checks, time series gap detection
+- **Validity**: Schema validation, data type validation, duplicate detection
+
+### 9.4 Available Audits
+
+1. **indicators_not_null**: Ensures critical columns (indicator_id, country_id, year) never contain null values
+2. **indicators_unique_grain**: Verifies grain uniqueness to prevent duplicate records
+3. **indicators_value_ranges**: Validates that years (1960-2030) and values are within reasonable ranges
+4. **indicators_referential_integrity**: Ensures data tables reference valid metadata/label records
+5. **indicators_data_freshness**: Monitors data currency and detects stale data
+6. **indicators_completeness**: Checks country coverage and indicator availability
+
+### 9.5 Quality Score
+
+Each dataset receives a quality score (0-100) calculated as:
+- 50% weight: Completeness percentage
+- 30% weight: Non-null rate
+- 20% weight: Uniqueness (duplicate penalty)
+
+**Score Interpretation**:
+- 90-100: Excellent - Production ready
+- 80-89: Good - Minor issues, acceptable
+- 60-79: Fair - Moderate issues, needs attention
+- 0-59: Poor - Critical issues, requires immediate action
+
+### 9.6 Documentation
+
+For detailed information about the data quality framework, see:
+- [docs/DATA_QUALITY.md](/Users/ssciortino/Projects/claude/osaa-mvp/docs/DATA_QUALITY.md) - Complete guide with examples and troubleshooting
+
+## 10. Next Steps
+
+### 10.1 Data Processing Improvements
 
 - Add support for more data sources and formats
-- Enhance data validation and quality checks
 - Optimize transformation performance
 - Expand the data catalog
 
-### 9.2 User Interface
+### 10.2 User Interface
 
 - Add web-based data exploration tools
 - Create interactive dashboards
