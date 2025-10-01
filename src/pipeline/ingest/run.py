@@ -11,7 +11,7 @@ import tempfile
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import duckdb
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 
 from pipeline.config import (
     ENABLE_S3_UPLOAD,
@@ -70,6 +70,118 @@ class Ingest:
             logger.warning("S3 upload is disabled")
             self.s3_client = None
             self.session = None
+
+    def validate_data_quality(self, table_name: str) -> Tuple[bool, List[str]]:
+        """Validate data quality before S3 upload.
+
+        Performs comprehensive validation checks including:
+        - Schema validation
+        - Null checks on critical columns
+        - Value range checks
+        - Duplicate detection
+
+        :param table_name: Fully qualified table name (e.g., 'source.sdg_data_national')
+        :return: Tuple of (is_valid, list_of_issues)
+        """
+        issues = []
+        logger.info(f"Validating data quality for {table_name}")
+
+        try:
+            # Check if table exists
+            table_exists = self.con.execute(
+                f"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{table_name.split('.')[-1]}'"
+            ).fetchone()[0] > 0
+
+            if not table_exists:
+                issues.append(f"Table {table_name} does not exist")
+                return False, issues
+
+            # Get row count
+            row_count = self.con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+            logger.info(f"Table {table_name} has {row_count} rows")
+
+            if row_count == 0:
+                issues.append(f"Table {table_name} is empty")
+                return False, issues
+
+            # Get column names
+            columns = self.con.execute(
+                f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name.split('.')[-1]}'"
+            ).fetchall()
+            column_names = [col[0] for col in columns]
+            logger.info(f"Columns in {table_name}: {column_names}")
+
+            # Null checks for common critical columns
+            critical_columns = []
+            if 'indicator_id' in column_names or 'INDICATOR_ID' in column_names:
+                critical_columns.extend(['indicator_id', 'country_id', 'year'])
+            elif 'Indicator Code' in column_names:
+                critical_columns.extend(['"Indicator Code"', '"Country Code"'])
+
+            for col in critical_columns:
+                try:
+                    null_count = self.con.execute(
+                        f"SELECT COUNT(*) FROM {table_name} WHERE {col} IS NULL"
+                    ).fetchone()[0]
+
+                    if null_count > 0:
+                        null_pct = (null_count / row_count) * 100
+                        issues.append(f"Column {col} has {null_count} null values ({null_pct:.2f}%)")
+                        logger.warning(f"Null values detected in {col}: {null_count}")
+                except Exception as e:
+                    # Column might not exist or have different case
+                    logger.debug(f"Could not check {col}: {e}")
+
+            # Value range check for year column (if exists)
+            if 'year' in column_names or 'YEAR' in column_names:
+                try:
+                    year_col = 'year' if 'year' in column_names else 'YEAR'
+                    invalid_years = self.con.execute(
+                        f"SELECT COUNT(*) FROM {table_name} WHERE {year_col} < 1960 OR {year_col} > 2030"
+                    ).fetchone()[0]
+
+                    if invalid_years > 0:
+                        issues.append(f"Found {invalid_years} records with invalid year values (outside 1960-2030)")
+                        logger.warning(f"Invalid year values detected: {invalid_years}")
+                except Exception as e:
+                    logger.debug(f"Could not check year range: {e}")
+
+            # Duplicate check on grain columns
+            if critical_columns:
+                try:
+                    grain_cols = ', '.join(critical_columns)
+                    duplicate_count = self.con.execute(
+                        f"""
+                        SELECT COUNT(*) FROM (
+                            SELECT {grain_cols}, COUNT(*) as cnt
+                            FROM {table_name}
+                            GROUP BY {grain_cols}
+                            HAVING COUNT(*) > 1
+                        )
+                        """
+                    ).fetchone()[0]
+
+                    if duplicate_count > 0:
+                        issues.append(f"Found {duplicate_count} duplicate records based on grain columns")
+                        logger.warning(f"Duplicate records detected: {duplicate_count}")
+                except Exception as e:
+                    logger.debug(f"Could not check duplicates: {e}")
+
+            # Summary
+            if issues:
+                logger.warning(f"Data quality validation found {len(issues)} issues for {table_name}")
+                for issue in issues:
+                    logger.warning(f"  - {issue}")
+                return False, issues
+            else:
+                logger.info(f"Data quality validation passed for {table_name}")
+                return True, []
+
+        except Exception as e:
+            error_msg = f"Error during data quality validation: {e}"
+            logger.error(error_msg)
+            issues.append(error_msg)
+            return False, issues
 
     def setup_s3_secret(self):
         """
@@ -149,6 +261,20 @@ class Ingest:
             except Exception as e:
                 logger.error(f"Failed to get row count for table {fully_qualified_name}: {e}")
                 raise FileConversionError(f"Failed to verify table creation: {e}")
+
+            # Validate data quality before upload
+            logger.info(f"Running data quality validation for {fully_qualified_name}")
+            is_valid, validation_issues = self.validate_data_quality(fully_qualified_name)
+
+            if not is_valid:
+                logger.warning(f"Data quality validation failed for {fully_qualified_name}")
+                logger.warning(f"Issues found: {len(validation_issues)}")
+                for issue in validation_issues:
+                    logger.warning(f"  - {issue}")
+                # Continue with upload but log warnings
+                logger.warning("Proceeding with upload despite validation issues")
+            else:
+                logger.info(f"Data quality validation passed for {fully_qualified_name}")
 
             # Attempt S3 upload
             logger.info(f"Attempting to upload to S3: {s3_file_path}")
