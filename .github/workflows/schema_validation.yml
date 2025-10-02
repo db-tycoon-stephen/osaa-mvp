@@ -1,0 +1,271 @@
+name: Schema Validation
+
+on:
+  pull_request:
+    paths:
+      - 'sqlMesh/schemas/**'
+      - 'sqlMesh/models/**'
+      - 'src/pipeline/schema_*.py'
+  push:
+    branches:
+      - main
+    paths:
+      - 'sqlMesh/schemas/**'
+
+jobs:
+  validate-schema-changes:
+    runs-on: ubuntu-latest
+    name: Validate Schema Changes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history for comparison
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Detect changed schema files
+        id: changed-files
+        run: |
+          # Get list of changed schema files
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="HEAD^"
+          fi
+
+          CHANGED_SCHEMAS=$(git diff --name-only $BASE_REF HEAD | grep -E '^sqlMesh/schemas/.*\.py$' || true)
+
+          if [ -z "$CHANGED_SCHEMAS" ]; then
+            echo "No schema changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changed schema files:"
+            echo "$CHANGED_SCHEMAS"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+
+            # Save to file for later steps
+            echo "$CHANGED_SCHEMAS" > changed_schemas.txt
+          fi
+
+      - name: Validate schema definitions
+        if: steps.changed-files.outputs.has_changes == 'true'
+        run: |
+          echo "## Schema Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          VALIDATION_FAILED=0
+
+          while IFS= read -r schema_file; do
+            if [ ! -z "$schema_file" ] && [ -f "$schema_file" ]; then
+              echo "### Validating: $schema_file" >> $GITHUB_STEP_SUMMARY
+
+              # Extract schema name from path (e.g., sqlMesh/schemas/sdg/v2.py -> sdg.indicators)
+              SCHEMA_DIR=$(echo $schema_file | cut -d'/' -f3)
+              SCHEMA_NAME="${SCHEMA_DIR}.indicators"
+
+              # Run validation
+              if python scripts/schema_manager.py validate "$SCHEMA_NAME" --file "$schema_file" --strict; then
+                echo "✅ Schema validation passed" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "❌ Schema validation failed" >> $GITHUB_STEP_SUMMARY
+                VALIDATION_FAILED=1
+              fi
+
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done < changed_schemas.txt
+
+          exit $VALIDATION_FAILED
+
+      - name: Check schema compatibility
+        if: steps.changed-files.outputs.has_changes == 'true'
+        run: |
+          echo "## Schema Compatibility Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          COMPATIBILITY_FAILED=0
+
+          while IFS= read -r schema_file; do
+            if [ ! -z "$schema_file" ] && [ -f "$schema_file" ]; then
+              # Extract version number from filename (e.g., v2.py -> 2)
+              VERSION=$(basename "$schema_file" | sed 's/v\([0-9]*\)\.py/\1/')
+              SCHEMA_DIR=$(echo $schema_file | cut -d'/' -f3)
+              SCHEMA_NAME="${SCHEMA_DIR}.indicators"
+
+              # Check if this is a new version (v2 or higher)
+              if [ "$VERSION" -gt 1 ]; then
+                echo "### Compatibility Check: $SCHEMA_NAME v$VERSION" >> $GITHUB_STEP_SUMMARY
+
+                PREV_VERSION=$((VERSION - 1))
+
+                # Check if previous version exists in registry
+                if python scripts/schema_manager.py show "$SCHEMA_NAME" --version "$PREV_VERSION" > /dev/null 2>&1; then
+                  # Compare with previous version
+                  if python scripts/schema_manager.py validate "$SCHEMA_NAME" \
+                    --file "$schema_file" \
+                    --compare-to "$PREV_VERSION" \
+                    --strategy backward; then
+                    echo "✅ Backward compatible with v$PREV_VERSION" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "⚠️ Breaking changes detected from v$PREV_VERSION" >> $GITHUB_STEP_SUMMARY
+                    echo "Note: Breaking changes require major version bump" >> $GITHUB_STEP_SUMMARY
+
+                    # Show diff
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    echo "**Changes:**" >> $GITHUB_STEP_SUMMARY
+                    python scripts/schema_manager.py diff "$SCHEMA_NAME" "$PREV_VERSION" "$VERSION" >> $GITHUB_STEP_SUMMARY || true
+                  fi
+                else
+                  echo "ℹ️ Previous version not found in registry - skipping compatibility check" >> $GITHUB_STEP_SUMMARY
+                fi
+
+                echo "" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          done < changed_schemas.txt
+
+      - name: Register new schema versions
+        if: |
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          steps.changed-files.outputs.has_changes == 'true'
+        run: |
+          echo "## Registering Schema Versions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          while IFS= read -r schema_file; do
+            if [ ! -z "$schema_file" ] && [ -f "$schema_file" ]; then
+              VERSION=$(basename "$schema_file" | sed 's/v\([0-9]*\)\.py/\1/')
+              SCHEMA_DIR=$(echo $schema_file | cut -d'/' -f3)
+              SCHEMA_NAME="${SCHEMA_DIR}.indicators"
+
+              # Check if version already registered
+              if python scripts/schema_manager.py show "$SCHEMA_NAME" --version "$VERSION" > /dev/null 2>&1; then
+                echo "ℹ️ $SCHEMA_NAME v$VERSION already registered" >> $GITHUB_STEP_SUMMARY
+              else
+                # Register new version
+                if python scripts/schema_manager.py register "$SCHEMA_NAME" \
+                  --version "$VERSION" \
+                  --file "$schema_file" \
+                  --strategy backward \
+                  --description "Auto-registered from CI/CD" \
+                  --created-by "github-actions"; then
+                  echo "✅ Registered $SCHEMA_NAME v$VERSION" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "❌ Failed to register $SCHEMA_NAME v$VERSION" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+            fi
+          done < changed_schemas.txt
+
+      - name: Comment on PR
+        if: |
+          github.event_name == 'pull_request' &&
+          steps.changed-files.outputs.has_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            // Read summary
+            const summary = fs.readFileSync(process.env.GITHUB_STEP_SUMMARY, 'utf8');
+
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔍 Schema Validation Results\n\n${summary}`
+            });
+
+  schema-migration-check:
+    runs-on: ubuntu-latest
+    name: Check Migration Scripts
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.body, '[schema-migration]')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Detect migration files
+        id: detect-migrations
+        run: |
+          # Look for migration files
+          MIGRATIONS=$(find sqlMesh/schemas -name "migrations.py" -type f)
+
+          if [ -z "$MIGRATIONS" ]; then
+            echo "No migration files found"
+            echo "has_migrations=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found migration files:"
+            echo "$MIGRATIONS"
+            echo "has_migrations=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Test migration dry-run
+        if: steps.detect-migrations.outputs.has_migrations == 'true'
+        run: |
+          echo "## Migration Dry-Run Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test SDG migration if it exists
+          if [ -f "sqlMesh/schemas/sdg/migrations.py" ]; then
+            echo "### SDG Migration Test" >> $GITHUB_STEP_SUMMARY
+
+            # Try v1 to v2 migration if both exist
+            if python scripts/schema_manager.py show sdg.indicators --version 1 > /dev/null 2>&1 && \
+               python scripts/schema_manager.py show sdg.indicators --version 2 > /dev/null 2>&1; then
+
+              if python scripts/schema_manager.py migrate sdg.indicators \
+                --from 1 --to 2 --dry-run --yes; then
+                echo "✅ SDG v1→v2 migration dry-run passed" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "❌ SDG v1→v2 migration dry-run failed" >> $GITHUB_STEP_SUMMARY
+              fi
+            else
+              echo "ℹ️ Skipping migration test - versions not registered" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Validate migration rollback
+        if: steps.detect-migrations.outputs.has_migrations == 'true'
+        run: |
+          echo "## Migration Rollback Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test rollback capability
+          if python scripts/schema_manager.py show sdg.indicators --version 2 > /dev/null 2>&1; then
+            echo "### SDG Rollback Test (v2→v1)" >> $GITHUB_STEP_SUMMARY
+
+            if python scripts/schema_manager.py rollback sdg.indicators \
+              --from 2 --to 1 --dry-run --yes; then
+              echo "✅ Rollback dry-run passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ Rollback may not be fully reversible" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

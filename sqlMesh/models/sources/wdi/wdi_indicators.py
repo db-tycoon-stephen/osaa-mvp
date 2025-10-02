@@ -4,24 +4,30 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh import model
 from macros.ibis_expressions import generate_ibis_table
 from macros.utils import get_sql_model_schema
+from macros.schema_utils import get_schema_for_model, get_schema_descriptions, get_schema_grain
 from sqlglot import exp
 
-COLUMN_SCHEMA = {
-    "country_id": "String",
-    "indicator_id": "String",
-    "year": "Int",
-    "value": "Decimal",
-    "magnitude": "String",
-    "qualifier": "String",
-    "indicator_description": "String",
-}
+# Use versioned schema from registry (v1)
+COLUMN_SCHEMA = get_schema_for_model("wdi", version=1)
+COLUMN_DESCRIPTIONS = get_schema_descriptions("wdi", version=1)
+SCHEMA_GRAIN = get_schema_grain("wdi")
 
 
 @model(
     "sources.wdi",
     is_sql=True,
     kind="FULL",
-    columns=COLUMN_SCHEMA
+    columns=COLUMN_SCHEMA,
+    description="""This model contains WDI (World Development Indicators) data.
+
+    Schema Version: 1
+    Managed by schema registry for version control and evolution.
+    """,
+    column_descriptions=COLUMN_DESCRIPTIONS,
+    grain=SCHEMA_GRAIN,
+    physical_properties={
+        "schema_version": 1,  # Track schema version
+    },
 )
 def entrypoint(evaluator: MacroEvaluator) -> str:
     """Process WDI data and return the transformed Ibis table."""
