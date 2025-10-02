@@ -1,0 +1,87 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#667eea', 'primaryTextColor':'#fff', 'primaryBorderColor':'#5a67d8', 'lineColor':'#5a67d8', 'secondaryColor':'#f7fafc', 'tertiaryColor':'#e2e8f0'}}}%%
+
+graph LR
+    %% SDG Data Lineage Diagram
+    %% Shows the complete data flow for Sustainable Development Goals indicators
+
+    %% Source Systems
+    subgraph "Source Systems"
+        UNAPI[UN Statistics API]
+        UNCSV[UN SDG CSV Files]
+    end
+
+    %% Raw Data Layer
+    subgraph "Raw Data (CSV)"
+        SDG_RAW[data/raw/sdg/<br/>SDG_DATA_NATIONAL.csv]
+        SDG_LABEL_RAW[data/raw/sdg/<br/>SDG_LABEL.csv]
+    end
+
+    %% S3 Landing Zone
+    subgraph "S3 Landing Zone"
+        SDG_LAND[s3://osaa-mvp/dev/landing/sdg/<br/>SDG_DATA_NATIONAL.parquet]
+        SDG_LABEL_LAND[s3://osaa-mvp/dev/landing/sdg/<br/>SDG_LABEL.parquet]
+    end
+
+    %% SQLMesh Models
+    subgraph "SQLMesh Transformations"
+        SDG_SRC[sources.sdg<br/>sdg_indicators.py]
+    end
+
+    %% DuckDB Processing
+    subgraph "DuckDB Tables"
+        SDG_TABLE[(sources.sdg<br/>Indicators Table)]
+    end
+
+    %% Master Model
+    subgraph "Master Layer"
+        MASTER[master.indicators<br/>Unified Table]
+    end
+
+    %% S3 Staging
+    subgraph "S3 Staging"
+        SDG_STAGE[s3://osaa-mvp/dev/staging/<br/>sources/sdg/]
+        MASTER_STAGE[s3://osaa-mvp/dev/staging/<br/>master/indicators/]
+    end
+
+    %% Analytics Layer
+    subgraph "Analytics & Reporting"
+        DASHBOARD[SDG Dashboard]
+        REPORTS[UN Reports]
+        API_OUT[Data API]
+    end
+
+    %% Data Flow Connections
+    UNAPI -->|Download| SDG_RAW
+    UNCSV -->|Manual Upload| SDG_RAW
+    UNAPI -->|Metadata| SDG_LABEL_RAW
+
+    SDG_RAW -->|Ingest Pipeline| SDG_LAND
+    SDG_LABEL_RAW -->|Ingest Pipeline| SDG_LABEL_LAND
+
+    SDG_LAND -->|Read| SDG_SRC
+    SDG_LABEL_LAND -->|Join| SDG_SRC
+
+    SDG_SRC -->|Transform| SDG_TABLE
+    SDG_TABLE -->|Union| MASTER
+
+    SDG_TABLE -->|S3 Write| SDG_STAGE
+    MASTER -->|S3 Write| MASTER_STAGE
+
+    MASTER_STAGE -->|Consume| DASHBOARD
+    MASTER_STAGE -->|Generate| REPORTS
+    MASTER_STAGE -->|Serve| API_OUT
+
+    %% Styling
+    classDef source fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef raw fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef landing fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef transform fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef master fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+
+    class UNAPI,UNCSV source
+    class SDG_RAW,SDG_LABEL_RAW raw
+    class SDG_LAND,SDG_LABEL_LAND landing
+    class SDG_SRC,SDG_TABLE transform
+    class MASTER,MASTER_STAGE master
+    class DASHBOARD,REPORTS,API_OUT output

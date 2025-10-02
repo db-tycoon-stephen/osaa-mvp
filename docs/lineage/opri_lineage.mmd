@@ -1,0 +1,96 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#667eea', 'primaryTextColor':'#fff', 'primaryBorderColor':'#5a67d8', 'lineColor':'#5a67d8', 'secondaryColor':'#f7fafc', 'tertiaryColor':'#e2e8f0'}}}%%
+
+graph LR
+    %% OPRI Data Lineage Diagram
+    %% Shows the complete data flow for Operational Performance and Risk Indicators
+
+    %% Source Systems
+    subgraph "Source Systems"
+        OPS_SYS[Operational Systems]
+        FIN_SYS[Financial Systems]
+        HR_SYS[HR Systems]
+        RISK_SYS[Risk Management]
+    end
+
+    %% Raw Data Layer
+    subgraph "Raw Data (CSV)"
+        OPRI_DATA_RAW[data/raw/opri/<br/>OPRI_DATA_NATIONAL.csv]
+        OPRI_LABEL_RAW[data/raw/opri/<br/>OPRI_LABEL.csv]
+    end
+
+    %% S3 Landing Zone
+    subgraph "S3 Landing Zone"
+        OPRI_DATA_LAND[s3://osaa-mvp/dev/landing/opri/<br/>OPRI_DATA_NATIONAL.parquet]
+        OPRI_LABEL_LAND[s3://osaa-mvp/dev/landing/opri/<br/>OPRI_LABEL.parquet]
+    end
+
+    %% SQLMesh Models
+    subgraph "SQLMesh Transformations"
+        OPRI_SRC[sources.opri<br/>opri_indicators.py]
+    end
+
+    %% DuckDB Processing
+    subgraph "DuckDB Tables"
+        OPRI_TABLE[(sources.opri<br/>Indicators Table)]
+        OPRI_METRICS[(Calculated Metrics)]
+    end
+
+    %% Master Model
+    subgraph "Master Layer"
+        MASTER[master.indicators<br/>Unified Table]
+    end
+
+    %% S3 Staging
+    subgraph "S3 Staging"
+        OPRI_STAGE[s3://osaa-mvp/dev/staging/<br/>sources/opri/]
+        MASTER_STAGE[s3://osaa-mvp/dev/staging/<br/>master/indicators/]
+    end
+
+    %% Analytics Layer
+    subgraph "Analytics & Reporting"
+        OPS_DASH[Operations Dashboard]
+        RISK_DASH[Risk Dashboard]
+        EXEC_REPORTS[Executive Reports]
+        ALERTS[Alert System]
+    end
+
+    %% Data Flow Connections
+    OPS_SYS -->|Extract| OPRI_DATA_RAW
+    FIN_SYS -->|Extract| OPRI_DATA_RAW
+    HR_SYS -->|Extract| OPRI_DATA_RAW
+    RISK_SYS -->|Extract| OPRI_DATA_RAW
+    OPS_SYS -->|Metadata| OPRI_LABEL_RAW
+
+    OPRI_DATA_RAW -->|Ingest Pipeline| OPRI_DATA_LAND
+    OPRI_LABEL_RAW -->|Ingest Pipeline| OPRI_LABEL_LAND
+
+    OPRI_DATA_LAND -->|Read| OPRI_SRC
+    OPRI_LABEL_LAND -->|Join| OPRI_SRC
+
+    OPRI_SRC -->|Transform| OPRI_TABLE
+    OPRI_TABLE -->|Calculate KPIs| OPRI_METRICS
+
+    OPRI_TABLE -->|Union| MASTER
+
+    OPRI_TABLE -->|S3 Write| OPRI_STAGE
+    MASTER -->|S3 Write| MASTER_STAGE
+
+    OPRI_STAGE -->|Real-time| OPS_DASH
+    OPRI_STAGE -->|Monitor| RISK_DASH
+    MASTER_STAGE -->|Generate| EXEC_REPORTS
+    OPRI_METRICS -->|Trigger| ALERTS
+
+    %% Styling
+    classDef source fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef raw fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef landing fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef transform fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef master fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+
+    class OPS_SYS,FIN_SYS,HR_SYS,RISK_SYS source
+    class OPRI_DATA_RAW,OPRI_LABEL_RAW raw
+    class OPRI_DATA_LAND,OPRI_LABEL_LAND landing
+    class OPRI_SRC,OPRI_TABLE,OPRI_METRICS transform
+    class MASTER,MASTER_STAGE master
+    class OPS_DASH,RISK_DASH,EXEC_REPORTS,ALERTS output

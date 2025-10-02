@@ -1,0 +1,211 @@
+name: Generate Data Catalog
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main
+    paths:
+      - 'sqlMesh/models/**'
+      - 'scripts/generate_data_catalog.py'
+      - '.github/workflows/generate_catalog.yml'
+
+  # Trigger on pull request
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'sqlMesh/models/**'
+      - 'scripts/generate_data_catalog.py'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: 'Commit catalog changes'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+  # Run daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  generate-catalog:
+    name: Generate Data Catalog
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Data Catalog
+        run: |
+          echo "Generating data catalog..."
+          python scripts/generate_data_catalog.py
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          git add docs/DATA_CATALOG.md docs/catalog.json docs/catalog.html
+          if git diff --staged --quiet; then
+            echo "No changes to catalog files"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Catalog files have changed"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit Catalog Updates
+        if: |
+          steps.check_changes.outputs.has_changes == 'true' &&
+          (github.event_name == 'push' || github.event_name == 'schedule' ||
+           (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_changes == 'true'))
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/DATA_CATALOG.md docs/catalog.json docs/catalog.html
+          git commit -m "Auto-update data catalog [skip ci]" \
+                     -m "Generated from commit: ${{ github.sha }}" \
+                     -m "Triggered by: ${{ github.event_name }}"
+          git push
+
+      - name: Create Pull Request
+        if: |
+          steps.check_changes.outputs.has_changes == 'true' &&
+          github.event_name == 'pull_request'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Auto-update data catalog"
+          title: "Update Data Catalog"
+          body: |
+            ## Data Catalog Update
+
+            This PR updates the data catalog based on changes to SQLMesh models.
+
+            ### Changes:
+            - Updated `docs/DATA_CATALOG.md`
+            - Updated `docs/catalog.json`
+            - Updated `docs/catalog.html`
+
+            ### Triggered by:
+            - Event: ${{ github.event_name }}
+            - Commit: ${{ github.sha }}
+
+            Please review the updated catalog files before merging.
+          branch: update-data-catalog-${{ github.run_number }}
+          delete-branch: true
+
+      - name: Upload Catalog Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: data-catalog-${{ github.run_number }}
+          path: |
+            docs/DATA_CATALOG.md
+            docs/catalog.json
+            docs/catalog.html
+          retention-days: 30
+
+      - name: Validate Catalog JSON
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          echo "Validating catalog.json..."
+          python -c "
+          import json
+          import sys
+
+          try:
+              with open('docs/catalog.json', 'r') as f:
+                  catalog = json.load(f)
+
+              # Basic validation
+              assert 'datasets' in catalog, 'Missing datasets key'
+              assert len(catalog['datasets']) > 0, 'No datasets found'
+
+              for dataset in catalog['datasets']:
+                  assert 'name' in dataset, f'Missing name in dataset'
+                  assert 'columns' in dataset, f'Missing columns in {dataset.get(\"name\", \"unknown\")}'
+                  assert len(dataset['columns']) > 0, f'No columns in {dataset.get(\"name\", \"unknown\")}'
+
+              print(f'✅ Catalog valid: {len(catalog[\"datasets\"])} datasets found')
+              sys.exit(0)
+          except Exception as e:
+              print(f'❌ Catalog validation failed: {e}')
+              sys.exit(1)
+          "
+
+      - name: Generate Catalog Report
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          echo "## Data Catalog Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          python -c "
+          import json
+
+          with open('docs/catalog.json', 'r') as f:
+              catalog = json.load(f)
+
+          print(f'- **Total Datasets**: {len(catalog[\"datasets\"])}')
+          print(f'- **Generated**: {catalog.get(\"generated_at\", \"Unknown\")}')
+          print(f'- **Version**: {catalog.get(\"version\", \"Unknown\")}')
+          print('')
+          print('### Datasets:')
+
+          for dataset in catalog['datasets']:
+              print(f'- **{dataset[\"name\"]}**: {len(dataset[\"columns\"])} columns')
+          " >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on Failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Data Catalog Generation Failed',
+              body: `## Data Catalog Generation Failed
+
+              The automated data catalog generation has failed.
+
+              **Details:**
+              - Workflow Run: [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              - Commit: ${context.sha}
+              - Triggered by: ${context.eventName}
+
+              Please check the workflow logs for more details.`,
+              labels: ['bug', 'documentation', 'automated']
+            };
+
+            // Only create issue for scheduled runs or main branch pushes
+            if (context.eventName === 'schedule' ||
+                (context.eventName === 'push' && context.ref === 'refs/heads/main')) {
+              await github.rest.issues.create(issue);
+            }

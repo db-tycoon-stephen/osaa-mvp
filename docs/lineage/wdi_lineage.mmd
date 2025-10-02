@@ -1,0 +1,96 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#667eea', 'primaryTextColor':'#fff', 'primaryBorderColor':'#5a67d8', 'lineColor':'#5a67d8', 'secondaryColor':'#f7fafc', 'tertiaryColor':'#e2e8f0'}}}%%
+
+graph LR
+    %% WDI Data Lineage Diagram
+    %% Shows the complete data flow for World Development Indicators
+
+    %% Source Systems
+    subgraph "Source Systems"
+        WBAPI[World Bank API]
+        WBDATA[World Bank DataBank]
+    end
+
+    %% Raw Data Layer
+    subgraph "Raw Data (CSV)"
+        WDI_CSV_RAW[data/raw/wdi/<br/>WDI_CSV.csv<br/>Wide Format]
+        WDI_SERIES_RAW[data/raw/wdi/<br/>WDI_SERIES.csv<br/>Metadata]
+    end
+
+    %% S3 Landing Zone
+    subgraph "S3 Landing Zone"
+        WDI_CSV_LAND[s3://osaa-mvp/dev/landing/wdi/<br/>WDI_CSV.parquet]
+        WDI_SERIES_LAND[s3://osaa-mvp/dev/landing/wdi/<br/>WDI_SERIES.parquet]
+    end
+
+    %% SQLMesh Models
+    subgraph "SQLMesh Transformations"
+        WDI_SRC[sources.wdi<br/>wdi_indicators.py]
+        WDI_AVG[sources.wdi_country_averages<br/>Aggregations]
+    end
+
+    %% DuckDB Processing
+    subgraph "DuckDB Tables"
+        WDI_PIVOT[(Pivot Operation<br/>Wide to Long)]
+        WDI_TABLE[(sources.wdi<br/>Indicators Table)]
+        WDI_AGG[(Country Averages)]
+    end
+
+    %% Master Model
+    subgraph "Master Layer"
+        MASTER[master.indicators<br/>Unified Table]
+    end
+
+    %% S3 Staging
+    subgraph "S3 Staging"
+        WDI_STAGE[s3://osaa-mvp/dev/staging/<br/>sources/wdi/]
+        WDI_AVG_STAGE[s3://osaa-mvp/dev/staging/<br/>sources/wdi_averages/]
+        MASTER_STAGE[s3://osaa-mvp/dev/staging/<br/>master/indicators/]
+    end
+
+    %% Analytics Layer
+    subgraph "Analytics & Reporting"
+        ECON_DASH[Economic Dashboard]
+        DEV_REPORTS[Development Reports]
+        RESEARCH[Research Datasets]
+    end
+
+    %% Data Flow Connections
+    WBAPI -->|Download| WDI_CSV_RAW
+    WBDATA -->|Export| WDI_CSV_RAW
+    WBAPI -->|Metadata| WDI_SERIES_RAW
+
+    WDI_CSV_RAW -->|Ingest Pipeline| WDI_CSV_LAND
+    WDI_SERIES_RAW -->|Ingest Pipeline| WDI_SERIES_LAND
+
+    WDI_CSV_LAND -->|Read| WDI_SRC
+    WDI_SERIES_LAND -->|Enrich| WDI_SRC
+
+    WDI_SRC -->|Pivot Long| WDI_PIVOT
+    WDI_PIVOT -->|Transform| WDI_TABLE
+    WDI_TABLE -->|Aggregate| WDI_AVG
+    WDI_AVG -->|Calculate| WDI_AGG
+
+    WDI_TABLE -->|Union| MASTER
+
+    WDI_TABLE -->|S3 Write| WDI_STAGE
+    WDI_AGG -->|S3 Write| WDI_AVG_STAGE
+    MASTER -->|S3 Write| MASTER_STAGE
+
+    MASTER_STAGE -->|Consume| ECON_DASH
+    MASTER_STAGE -->|Generate| DEV_REPORTS
+    WDI_AVG_STAGE -->|Export| RESEARCH
+
+    %% Styling
+    classDef source fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef raw fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef landing fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef transform fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef master fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+
+    class WBAPI,WBDATA source
+    class WDI_CSV_RAW,WDI_SERIES_RAW raw
+    class WDI_CSV_LAND,WDI_SERIES_LAND landing
+    class WDI_SRC,WDI_AVG,WDI_PIVOT,WDI_TABLE,WDI_AGG transform
+    class MASTER,MASTER_STAGE master
+    class ECON_DASH,DEV_REPORTS,RESEARCH output
