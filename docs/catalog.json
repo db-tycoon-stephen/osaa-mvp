@@ -1,0 +1,689 @@
+{
+  "generated_at": "2025-10-02T08:05:43.647161",
+  "version": "1.0.0",
+  "datasets": [
+    {
+      "name": "_metadata.all_models",
+      "schema": "_metadata",
+      "table": "all_models",
+      "description": "Table containing all_models data",
+      "columns": [
+        {
+          "name": "model_name",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "model_description",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "model_kind",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "grain",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "columns",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "column_descriptions",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        },
+        {
+          "name": "physical_properties",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [],
+        "downstream": []
+      },
+      "metadata": {
+        "update_frequency": "Daily",
+        "sla_hours": 24,
+        "owner": "UN-OSAA Data Team",
+        "grain": []
+      },
+      "physical_properties": {},
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM _metadata.all_models LIMIT 10;"
+      ]
+    },
+    {
+      "name": "master.indicators",
+      "schema": "master",
+      "table": "indicators",
+      "description": "Unified master table combining all indicator sources into a single comprehensive dataset.",
+      "columns": [
+        {
+          "name": "indicator_id",
+          "type": "String",
+          "nullable": true,
+          "description": "Unique indicator identifier (varies by source)",
+          "business_meaning": "Unique identifier for the indicator metric being measured",
+          "example_values": [
+            "1.1.1",
+            "2.3.2",
+            "17.18.1",
+            "SDG_1_1_1"
+          ]
+        },
+        {
+          "name": "country_id",
+          "type": "String",
+          "nullable": true,
+          "description": "ISO 3166-1 alpha-3 country code",
+          "business_meaning": "ISO 3166-1 alpha-3 country code for geographic identification",
+          "example_values": [
+            "USA",
+            "GBR",
+            "JPN",
+            "BRA",
+            "IND"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "Int64",
+          "nullable": true,
+          "description": "Reference year for the data point",
+          "business_meaning": "The calendar year for which the data point is recorded",
+          "example_values": [
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "Decimal",
+          "nullable": true,
+          "description": "Numeric value of the indicator",
+          "business_meaning": "The numeric measurement or observation for the indicator",
+          "example_values": []
+        },
+        {
+          "name": "magnitude",
+          "type": "String",
+          "nullable": true,
+          "description": "Scale or unit of measurement",
+          "business_meaning": "Scale or order of magnitude for the value (e.g., thousands, millions)",
+          "example_values": [
+            "units",
+            "thousands",
+            "millions",
+            "percentage"
+          ]
+        },
+        {
+          "name": "qualifier",
+          "type": "String",
+          "nullable": true,
+          "description": "Data quality or status notes",
+          "business_meaning": "Additional context or quality notes about the data point",
+          "example_values": [
+            "estimated",
+            "provisional",
+            "final",
+            "revised"
+          ]
+        },
+        {
+          "name": "indicator_description",
+          "type": "String",
+          "nullable": true,
+          "description": "Human-readable indicator description",
+          "business_meaning": "Human-readable description of what the indicator measures",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [],
+        "downstream": []
+      },
+      "metadata": {
+        "update_frequency": "Daily",
+        "sla_hours": 24,
+        "owner": "UN-OSAA Data Team",
+        "grain": [
+          "source",
+          "indicator_id",
+          "country_id",
+          "year"
+        ]
+      },
+      "physical_properties": {
+        "dataset_owner": "UN-OSAA Data Team",
+        "maintenance_status": "Actively Maintained",
+        "update_cadence": "Daily",
+        "transformations_of_raw_data": "Union of all source indicators with source tracking"
+      },
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM master.indicators LIMIT 10;",
+        "-- Get latest year data\nSELECT * FROM master.indicators\nWHERE year = (SELECT MAX(year) FROM master.indicators);",
+        "-- Get data for specific country\nSELECT * FROM master.indicators\nWHERE country_id = 'USA';",
+        "-- Get specific indicator data\nSELECT * FROM master.indicators\nWHERE indicator_id LIKE '1.%';"
+      ]
+    },
+    {
+      "name": "sources.wdi",
+      "schema": "sources",
+      "table": "wdi",
+      "description": "World Development Indicators (WDI) from the World Bank's comprehensive development database.",
+      "columns": [
+        {
+          "name": "country_id",
+          "type": "String",
+          "nullable": true,
+          "description": "ISO 3166-1 alpha-3 country code",
+          "business_meaning": "ISO 3166-1 alpha-3 country code for geographic identification",
+          "example_values": [
+            "USA",
+            "GBR",
+            "JPN",
+            "BRA",
+            "IND"
+          ]
+        },
+        {
+          "name": "indicator_id",
+          "type": "String",
+          "nullable": true,
+          "description": "World Bank indicator code",
+          "business_meaning": "Unique identifier for the indicator metric being measured",
+          "example_values": [
+            "1.1.1",
+            "2.3.2",
+            "17.18.1",
+            "SDG_1_1_1"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "nullable": true,
+          "description": "Reference year for the data point",
+          "business_meaning": "The calendar year for which the data point is recorded",
+          "example_values": [
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "Decimal",
+          "nullable": true,
+          "description": "Indicator value (units vary by indicator)",
+          "business_meaning": "The numeric measurement or observation for the indicator",
+          "example_values": []
+        },
+        {
+          "name": "magnitude",
+          "type": "String",
+          "nullable": true,
+          "description": "Scale or unit of measurement",
+          "business_meaning": "Scale or order of magnitude for the value (e.g., thousands, millions)",
+          "example_values": [
+            "units",
+            "thousands",
+            "millions",
+            "percentage"
+          ]
+        },
+        {
+          "name": "qualifier",
+          "type": "String",
+          "nullable": true,
+          "description": "Data quality or methodology notes",
+          "business_meaning": "Additional context or quality notes about the data point",
+          "example_values": [
+            "estimated",
+            "provisional",
+            "final",
+            "revised"
+          ]
+        },
+        {
+          "name": "indicator_description",
+          "type": "String",
+          "nullable": true,
+          "description": "Full description of the indicator",
+          "business_meaning": "Human-readable description of what the indicator measures",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [],
+        "downstream": [
+          "master.indicators"
+        ]
+      },
+      "metadata": {
+        "update_frequency": "Quarterly",
+        "sla_hours": 24,
+        "owner": "World Bank Data Group",
+        "grain": [
+          "indicator_id",
+          "country_id",
+          "year"
+        ]
+      },
+      "physical_properties": {
+        "publishing_org": "World Bank",
+        "link_to_raw_data": "https://datacatalog.worldbank.org/dataset/world-development-indicators",
+        "dataset_owner": "World Bank Data Group",
+        "dataset_owner_contact_info": "data@worldbank.org",
+        "funding_source": "World Bank",
+        "maintenance_status": "Actively Maintained",
+        "update_cadence": "Quarterly",
+        "transformations_of_raw_data": "Pivoted from wide to long format, enriched with series metadata"
+      },
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM sources.wdi LIMIT 10;",
+        "-- Get latest year data\nSELECT * FROM sources.wdi\nWHERE year = (SELECT MAX(year) FROM sources.wdi);",
+        "-- Get data for specific country\nSELECT * FROM sources.wdi\nWHERE country_id = 'USA';",
+        "-- Get specific indicator data\nSELECT * FROM sources.wdi\nWHERE indicator_id LIKE '1.%';"
+      ]
+    },
+    {
+      "name": "sources.wdi_country_averages",
+      "schema": "sources",
+      "table": "wdi_country_averages",
+      "description": "Table containing wdi_country_averages data",
+      "columns": [
+        {
+          "name": "country_id",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "ISO 3166-1 alpha-3 country code for geographic identification",
+          "example_values": [
+            "USA",
+            "GBR",
+            "JPN",
+            "BRA",
+            "IND"
+          ]
+        },
+        {
+          "name": "indicator_id",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "Unique identifier for the indicator metric being measured",
+          "example_values": [
+            "1.1.1",
+            "2.3.2",
+            "17.18.1",
+            "SDG_1_1_1"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "The calendar year for which the data point is recorded",
+          "example_values": [
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "Decimal",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "The numeric measurement or observation for the indicator",
+          "example_values": []
+        },
+        {
+          "name": "magnitude",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "Scale or order of magnitude for the value (e.g., thousands, millions)",
+          "example_values": [
+            "units",
+            "thousands",
+            "millions",
+            "percentage"
+          ]
+        },
+        {
+          "name": "qualifier",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "Additional context or quality notes about the data point",
+          "example_values": [
+            "estimated",
+            "provisional",
+            "final",
+            "revised"
+          ]
+        },
+        {
+          "name": "indicator_description",
+          "type": "String",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "Human-readable description of what the indicator measures",
+          "example_values": []
+        },
+        {
+          "name": "avg_value_by_country",
+          "type": "Float",
+          "nullable": true,
+          "description": "",
+          "business_meaning": "",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [
+          "sources.wdi"
+        ],
+        "downstream": [
+          "master.indicators"
+        ]
+      },
+      "metadata": {
+        "update_frequency": "Daily",
+        "sla_hours": 24,
+        "owner": "UN-OSAA Data Team",
+        "grain": []
+      },
+      "physical_properties": {},
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM sources.wdi_country_averages LIMIT 10;",
+        "-- Get latest year data\nSELECT * FROM sources.wdi_country_averages\nWHERE year = (SELECT MAX(year) FROM sources.wdi_country_averages);",
+        "-- Get data for specific country\nSELECT * FROM sources.wdi_country_averages\nWHERE country_id = 'USA';",
+        "-- Get specific indicator data\nSELECT * FROM sources.wdi_country_averages\nWHERE indicator_id LIKE '1.%';"
+      ]
+    },
+    {
+      "name": "sources.sdg",
+      "schema": "sources",
+      "table": "sdg",
+      "description": "This model contains Sustainable Development Goals (SDG) data for all countries and indicators.",
+      "columns": [
+        {
+          "name": "indicator_id",
+          "type": "String",
+          "nullable": true,
+          "description": "The unique identifier for the indicator",
+          "business_meaning": "Unique identifier for the indicator metric being measured",
+          "example_values": [
+            "1.1.1",
+            "2.3.2",
+            "17.18.1",
+            "SDG_1_1_1"
+          ]
+        },
+        {
+          "name": "country_id",
+          "type": "String",
+          "nullable": true,
+          "description": "The unique identifier for the country",
+          "business_meaning": "ISO 3166-1 alpha-3 country code for geographic identification",
+          "example_values": [
+            "USA",
+            "GBR",
+            "JPN",
+            "BRA",
+            "IND"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "nullable": true,
+          "description": "The year of the data",
+          "business_meaning": "The calendar year for which the data point is recorded",
+          "example_values": [
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "Decimal",
+          "nullable": true,
+          "description": "The value of the indicator for the country and year",
+          "business_meaning": "The numeric measurement or observation for the indicator",
+          "example_values": []
+        },
+        {
+          "name": "magnitude",
+          "type": "String",
+          "nullable": true,
+          "description": "The magnitude of the indicator for the country and year",
+          "business_meaning": "Scale or order of magnitude for the value (e.g., thousands, millions)",
+          "example_values": [
+            "units",
+            "thousands",
+            "millions",
+            "percentage"
+          ]
+        },
+        {
+          "name": "qualifier",
+          "type": "String",
+          "nullable": true,
+          "description": "The qualifier of the indicator for the country and year",
+          "business_meaning": "Additional context or quality notes about the data point",
+          "example_values": [
+            "estimated",
+            "provisional",
+            "final",
+            "revised"
+          ]
+        },
+        {
+          "name": "indicator_description",
+          "type": "String",
+          "nullable": true,
+          "description": "The description of the indicator",
+          "business_meaning": "Human-readable description of what the indicator measures",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [],
+        "downstream": [
+          "master.indicators"
+        ]
+      },
+      "metadata": {
+        "update_frequency": "Annually",
+        "sla_hours": 24,
+        "owner": "UN",
+        "grain": [
+          "indicator_id",
+          "country_id",
+          "year"
+        ]
+      },
+      "physical_properties": {
+        "publishing_org": "UN",
+        "link_to_raw_data": "https://unstats.un.org/sdgs/dataportal",
+        "dataset_owner": "UN",
+        "dataset_owner_contact_info": "https://unstats.un.org/sdgs/contact-us/",
+        "funding_source": "UN",
+        "maintenance_status": "Actively Maintained",
+        "how_data_was_collected": "https://unstats.un.org/sdgs/dataContacts/",
+        "update_cadence": "Annually",
+        "transformations_of_raw_data": "indicator labels and descriptions are joined together"
+      },
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM sources.sdg LIMIT 10;",
+        "-- Get latest year data\nSELECT * FROM sources.sdg\nWHERE year = (SELECT MAX(year) FROM sources.sdg);",
+        "-- Get data for specific country\nSELECT * FROM sources.sdg\nWHERE country_id = 'USA';",
+        "-- Get specific indicator data\nSELECT * FROM sources.sdg\nWHERE indicator_id LIKE '1.%';"
+      ]
+    },
+    {
+      "name": "sources.opri",
+      "schema": "sources",
+      "table": "opri",
+      "description": "OPRI (Operational Performance and Risk Indicators) data for institutional performance monitoring.",
+      "columns": [
+        {
+          "name": "indicator_id",
+          "type": "String",
+          "nullable": true,
+          "description": "Unique identifier for the OPRI metric",
+          "business_meaning": "Unique identifier for the indicator metric being measured",
+          "example_values": [
+            "1.1.1",
+            "2.3.2",
+            "17.18.1",
+            "SDG_1_1_1"
+          ]
+        },
+        {
+          "name": "country_id",
+          "type": "String",
+          "nullable": true,
+          "description": "ISO 3166-1 alpha-3 country code",
+          "business_meaning": "ISO 3166-1 alpha-3 country code for geographic identification",
+          "example_values": [
+            "USA",
+            "GBR",
+            "JPN",
+            "BRA",
+            "IND"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "nullable": true,
+          "description": "Reference year for the measurement",
+          "business_meaning": "The calendar year for which the data point is recorded",
+          "example_values": [
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "Decimal",
+          "nullable": true,
+          "description": "Numeric value of the indicator",
+          "business_meaning": "The numeric measurement or observation for the indicator",
+          "example_values": []
+        },
+        {
+          "name": "magnitude",
+          "type": "String",
+          "nullable": true,
+          "description": "Scale or unit of measurement",
+          "business_meaning": "Scale or order of magnitude for the value (e.g., thousands, millions)",
+          "example_values": [
+            "units",
+            "thousands",
+            "millions",
+            "percentage"
+          ]
+        },
+        {
+          "name": "qualifier",
+          "type": "String",
+          "nullable": true,
+          "description": "Data quality or status qualifier",
+          "business_meaning": "Additional context or quality notes about the data point",
+          "example_values": [
+            "estimated",
+            "provisional",
+            "final",
+            "revised"
+          ]
+        },
+        {
+          "name": "indicator_description",
+          "type": "String",
+          "nullable": true,
+          "description": "Detailed description of the indicator",
+          "business_meaning": "Human-readable description of what the indicator measures",
+          "example_values": []
+        }
+      ],
+      "lineage": {
+        "upstream": [],
+        "downstream": [
+          "master.indicators"
+        ]
+      },
+      "metadata": {
+        "update_frequency": "Monthly",
+        "sla_hours": 24,
+        "owner": "UN-OSAA Operations Team",
+        "grain": [
+          "indicator_id",
+          "country_id",
+          "year"
+        ]
+      },
+      "physical_properties": {
+        "publishing_org": "UN-OSAA",
+        "dataset_owner": "UN-OSAA Operations Team",
+        "maintenance_status": "Actively Maintained",
+        "update_cadence": "Monthly",
+        "transformations_of_raw_data": "Raw operational data aggregated and standardized"
+      },
+      "sample_queries": [
+        "-- Select all records\nSELECT * FROM sources.opri LIMIT 10;",
+        "-- Get latest year data\nSELECT * FROM sources.opri\nWHERE year = (SELECT MAX(year) FROM sources.opri);",
+        "-- Get data for specific country\nSELECT * FROM sources.opri\nWHERE country_id = 'USA';",
+        "-- Get specific indicator data\nSELECT * FROM sources.opri\nWHERE indicator_id LIKE '1.%';"
+      ]
+    }
+  ]
+}

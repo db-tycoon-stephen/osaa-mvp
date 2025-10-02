@@ -1,0 +1,202 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#667eea', 'primaryTextColor':'#fff', 'primaryBorderColor':'#5a67d8', 'lineColor':'#5a67d8', 'secondaryColor':'#f7fafc', 'tertiaryColor':'#e2e8f0'}}}%%
+
+graph TB
+    %% Complete OSAA Data Pipeline Lineage
+    %% Shows the full end-to-end data flow across all sources
+
+    %% External Data Sources
+    subgraph "External Data Sources"
+        direction LR
+        UN[UN Statistics<br/>SDG Indicators]
+        WB[World Bank<br/>WDI Database]
+        UNESCO[UNESCO<br/>Education Data]
+        INTERNAL[UN-OSAA<br/>Internal Systems]
+    end
+
+    %% Data Collection Layer
+    subgraph "Data Collection"
+        direction LR
+        API[API Connectors]
+        MANUAL[Manual Uploads]
+        BATCH[Batch Downloads]
+    end
+
+    %% Raw Data Storage
+    subgraph "Raw Data Storage (Local)"
+        direction LR
+        RAW_SDG[data/raw/sdg/]
+        RAW_WDI[data/raw/wdi/]
+        RAW_OPRI[data/raw/opri/]
+        RAW_EDU[data/raw/edu/]
+    end
+
+    %% Ingestion Pipeline
+    subgraph "Ingestion Pipeline"
+        INGEST[Docker Pipeline<br/>CSV → Parquet<br/>Schema Validation]
+    end
+
+    %% S3 Landing Zone
+    subgraph "S3 Landing Zone"
+        direction LR
+        LAND_SDG[landing/sdg/]
+        LAND_WDI[landing/wdi/]
+        LAND_OPRI[landing/opri/]
+        LAND_EDU[landing/edu/]
+    end
+
+    %% SQLMesh Transformation Layer
+    subgraph "SQLMesh Transformations"
+        direction TB
+        subgraph "Source Models"
+            direction LR
+            SRC_SDG[sources.sdg]
+            SRC_WDI[sources.wdi]
+            SRC_OPRI[sources.opri]
+            SRC_EDU[sources.edu]
+        end
+
+        subgraph "Aggregation Models"
+            AGG_WDI[wdi_country_averages]
+            AGG_REGIONAL[regional_aggregates]
+        end
+
+        subgraph "Master Model"
+            MASTER_IND[master.indicators<br/>Union All Sources]
+        end
+    end
+
+    %% DuckDB Processing
+    subgraph "DuckDB Engine"
+        DUCKDB[(DuckDB<br/>Analytics Database<br/>Columnar Storage)]
+    end
+
+    %% S3 Staging/Output
+    subgraph "S3 Staging"
+        direction LR
+        STAGE_SRC[staging/sources/]
+        STAGE_MASTER[staging/master/]
+    end
+
+    %% Environment Promotion
+    subgraph "Environment Promotion"
+        direction LR
+        DEV_ENV[Development<br/>dev/]
+        QA_ENV[QA/Testing<br/>qa/]
+        PROD_ENV[Production<br/>prod/]
+    end
+
+    %% Data Consumers
+    subgraph "Data Consumers"
+        direction TB
+        subgraph "Dashboards"
+            DASH_SDG[SDG Monitor]
+            DASH_OPS[Operations]
+            DASH_DEV[Development]
+        end
+
+        subgraph "Reports"
+            RPT_UN[UN Reports]
+            RPT_EXEC[Executive]
+            RPT_RESEARCH[Research]
+        end
+
+        subgraph "APIs"
+            API_PUBLIC[Public API]
+            API_INTERNAL[Internal API]
+        end
+
+        subgraph "Exports"
+            EXP_CSV[CSV Exports]
+            EXP_EXCEL[Excel Reports]
+            EXP_PARTNER[Partner Data]
+        end
+    end
+
+    %% CI/CD Pipeline
+    subgraph "CI/CD & Orchestration"
+        direction LR
+        GITHUB[GitHub Actions<br/>Daily Schedule]
+        MONITOR[Monitoring<br/>CloudWatch]
+    end
+
+    %% Data Flow Connections
+    UN --> API
+    WB --> API
+    UNESCO --> BATCH
+    INTERNAL --> MANUAL
+
+    API --> RAW_SDG
+    API --> RAW_WDI
+    BATCH --> RAW_EDU
+    MANUAL --> RAW_OPRI
+
+    RAW_SDG --> INGEST
+    RAW_WDI --> INGEST
+    RAW_OPRI --> INGEST
+    RAW_EDU --> INGEST
+
+    INGEST --> LAND_SDG
+    INGEST --> LAND_WDI
+    INGEST --> LAND_OPRI
+    INGEST --> LAND_EDU
+
+    LAND_SDG --> SRC_SDG
+    LAND_WDI --> SRC_WDI
+    LAND_OPRI --> SRC_OPRI
+    LAND_EDU --> SRC_EDU
+
+    SRC_SDG --> DUCKDB
+    SRC_WDI --> DUCKDB
+    SRC_OPRI --> DUCKDB
+    SRC_EDU --> DUCKDB
+
+    DUCKDB --> AGG_WDI
+    DUCKDB --> AGG_REGIONAL
+
+    SRC_SDG --> MASTER_IND
+    SRC_WDI --> MASTER_IND
+    SRC_OPRI --> MASTER_IND
+    SRC_EDU --> MASTER_IND
+
+    MASTER_IND --> DUCKDB
+    DUCKDB --> STAGE_SRC
+    DUCKDB --> STAGE_MASTER
+
+    STAGE_SRC --> DEV_ENV
+    STAGE_MASTER --> DEV_ENV
+
+    DEV_ENV --> QA_ENV
+    QA_ENV --> PROD_ENV
+
+    PROD_ENV --> DASH_SDG
+    PROD_ENV --> DASH_OPS
+    PROD_ENV --> DASH_DEV
+    PROD_ENV --> RPT_UN
+    PROD_ENV --> RPT_EXEC
+    PROD_ENV --> RPT_RESEARCH
+    PROD_ENV --> API_PUBLIC
+    PROD_ENV --> API_INTERNAL
+    PROD_ENV --> EXP_CSV
+    PROD_ENV --> EXP_EXCEL
+    PROD_ENV --> EXP_PARTNER
+
+    GITHUB --> INGEST
+    GITHUB --> DUCKDB
+    MONITOR --> GITHUB
+
+    %% Styling
+    classDef external fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef raw fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef landing fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef transform fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef master fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+    classDef cicd fill:#fafafa,stroke:#424242,stroke-width:2px,stroke-dasharray: 5 5
+
+    class UN,WB,UNESCO,INTERNAL external
+    class RAW_SDG,RAW_WDI,RAW_OPRI,RAW_EDU raw
+    class LAND_SDG,LAND_WDI,LAND_OPRI,LAND_EDU landing
+    class SRC_SDG,SRC_WDI,SRC_OPRI,SRC_EDU,AGG_WDI,AGG_REGIONAL,DUCKDB transform
+    class MASTER_IND,STAGE_MASTER master
+    class DASH_SDG,DASH_OPS,DASH_DEV,RPT_UN,RPT_EXEC,RPT_RESEARCH,API_PUBLIC,API_INTERNAL,EXP_CSV,EXP_EXCEL,EXP_PARTNER output
+    class GITHUB,MONITOR cicd

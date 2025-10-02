@@ -57,6 +57,27 @@ Here's how to get started with the OSAA Data Pipeline:
 
 For detailed instructions and advanced usage, see the sections below.
 
+## 2.1 Documentation
+
+### Quick Links
+
+- **[📊 Data Catalog](docs/DATA_CATALOG.md)** - Comprehensive catalog of all datasets, tables, and columns
+- **[🔧 Operational Runbook](docs/OPERATIONAL_RUNBOOK.md)** - Step-by-step procedures for operations
+- **[📚 API Reference](docs/API_REFERENCE.md)** - Complete API documentation for all modules
+- **[📖 Business Glossary](docs/BUSINESS_GLOSSARY.md)** - Business terms and definitions
+- **[🗺️ Data Lineage](docs/lineage/)** - Visual data flow diagrams
+- **[📝 Documentation Guide](docs/DOCUMENTATION_GUIDE.md)** - How to maintain documentation
+- **[🌐 Interactive Catalog](docs/catalog.html)** - Web-based searchable catalog
+
+### Key Documentation
+
+| Document | Description | Update Frequency |
+|----------|-------------|------------------|
+| [Data Catalog](docs/DATA_CATALOG.md) | Auto-generated catalog of all data assets | Daily/On change |
+| [Operational Runbook](docs/OPERATIONAL_RUNBOOK.md) | Operations procedures and troubleshooting | Quarterly |
+| [API Reference](docs/API_REFERENCE.md) | Technical API documentation | With code changes |
+| [Business Glossary](docs/BUSINESS_GLOSSARY.md) | Business terminology and metrics | As needed |
+
 ## 3. Getting Started
 
 ### 3.1 Required Software
@@ -376,14 +397,26 @@ Automated daily data processing:
 - Add support for more data sources and formats
 - Enhance data validation and quality checks
 - Optimize transformation performance
-- Expand the data catalog
+- Implement incremental processing for large datasets
+- Add data versioning and time-travel capabilities
 
-### 9.2 User Interface
+### 9.2 Documentation & Data Catalog
+
+- ✅ **COMPLETED**: Comprehensive data catalog with auto-generation
+- ✅ **COMPLETED**: Interactive HTML catalog with search
+- ✅ **COMPLETED**: Operational runbook for all procedures
+- ✅ **COMPLETED**: Business glossary and terminology guide
+- ✅ **COMPLETED**: Data lineage visualization
+- **TODO**: Add data quality metrics dashboard
+- **TODO**: Implement automated documentation testing
+- **TODO**: Create video tutorials for common tasks
+
+### 9.3 User Interface
 
 - Add web-based data exploration tools
 - Create interactive dashboards
 - Develop automated reporting capabilities
-- Improve documentation and user guides
+- Build self-service analytics portal
 
 ## Contact
 
